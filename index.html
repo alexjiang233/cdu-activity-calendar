@@ -80,5 +80,53 @@ document.getElementById('categories').addEventListener('click',e=>{const b=e.tar
 document.getElementById('query').addEventListener('input',render);document.getElementById('month').addEventListener('change',render);
 document.getElementById('kinds').addEventListener('click',e=>{const b=e.target.closest('button[data-kind]');if(!b)return;kind=b.dataset.kind;category='all';document.getElementById('query').value='';document.getElementById('month').value='';document.querySelectorAll('[data-kind]').forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-pressed',String(x===b))});document.querySelectorAll('[data-category]').forEach(x=>{const active=x.dataset.category==='all';x.classList.toggle('active',active);x.setAttribute('aria-pressed',String(active))});render()});
 batch.inventory.forEach(x=>document.getElementById('inventory').append(el('p',x.path+' — '+decisions[x.decision]+'：'+x.reason)));render();
-</script></body></html>
+</script><style>
+.jumpnav{position:sticky;top:0;z-index:10;background:var(--bg,#f7f8f2);padding:12px 0;margin-bottom:22px;border-bottom:1px solid var(--line)}.jumpnav a:first-child{background:white;color:var(--green)}.jumpnav a[aria-current="page"]{background:var(--green);color:white;border-color:var(--green)}
+.comparison-categories{display:flex;gap:8px;flex-wrap:wrap;margin:24px 0 18px}.comparison-categories button{background:#f4f6f0;border:1px solid var(--line);color:var(--green);padding:10px 16px;border-radius:22px;font:inherit;font-size:14px;cursor:pointer}.comparison-categories button[aria-pressed="true"]{background:var(--green);color:white}
+.comparison-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.comparison-card{border:1px solid var(--line);border-radius:14px;padding:22px;background:#fafbf7;min-width:0}.comparison-card h3{font-size:21px;margin:0 0 10px}.comparison-card .compare-brief{font-size:14px;color:var(--muted);margin:0 0 18px;line-height:1.8}.compare-years{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}.compare-year{font-size:13px;line-height:1.8;background:white;border-radius:10px;padding:12px}.compare-year strong{display:block;font-size:16px;margin-bottom:8px;color:var(--green)}.comparison-card details{padding:14px 0 0}.comparison-card details li{margin-bottom:10px}.year-compare .limits{margin-top:22px}.year-compare>.caution{font-size:13px}.year-compare>.comparison-overview{padding-top:20px;margin-top:24px}.comparison-overview summary{font-weight:normal}.year-compare>.comparison-intro{max-width:640px}.material-heading{margin:8px 0 20px;font-size:26px}#material-panel>.stats,#material-panel>#kinds{display:none}#material-panel .card{min-height:0}#material-panel .card>p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}#material-panel .card h3{font-size:20px}#material-panel .facts{margin:0 0 16px}.hero{padding-top:24px;padding-bottom:20px}.hero .intro{font-size:15px}.hero h1{font-size:42px}.hero .note{padding:20px}.scope>p,.scope>details{font-size:12px}.year-compare .eyebrow{font-size:11px}
+@media(max-width:760px){.comparison-grid{grid-template-columns:1fr}.comparison-card{padding:18px}.jumpnav{gap:6px}.jumpnav a{padding:10px 12px;font-size:13px}.hero h1{font-size:34px}.hero .note{display:none}.year-compare{padding:18px 14px}.compare-years{gap:8px}.compare-year{padding:10px}}
+</style>
+<script>
+(()=>{
+ 'use strict';
+ const comparison=document.getElementById('year-comparison');
+ const nav=document.querySelector('.jumpnav');
+ nav.replaceChildren();
+ const views=[['comparison','往届对比','#year-comparison'],['opportunity','活动与线索','#opportunities'],['reference','参考资料','#references']];
+ for(const [view,label,href] of views){const a=document.createElement('a');a.href=href;a.textContent=label;a.dataset.view=view;nav.append(a)}
+ const intro=comparison.querySelector('h2+p');intro.classList.add('comparison-intro');intro.textContent='先选感兴趣的方向，再看两届时间与规则变化。已核查 5 个活动系列，资料更新于 2026 年 10 月 15 日。';
+ const timeline=comparison.querySelector('.year-table');
+ const rows=[...timeline.querySelectorAll('tbody tr')];
+ const detailItems=[...comparison.querySelectorAll(':scope > details')];
+ const oldInstruction=timeline.nextElementSibling;oldInstruction.remove();
+ const categoryNav=document.createElement('div');categoryNav.className='comparison-categories';categoryNav.setAttribute('aria-label','往届活动分类');
+ const grid=document.createElement('div');grid.className='comparison-grid';grid.setAttribute('aria-live','polite');
+ timeline.before(categoryNav,grid);
+ const groups=[['sports','运动健身 · 2'],['creative','文化创作 · 2'],['technology','科技竞赛 · 1'],['other','参考与待补 · 2']];
+ const mapping=['sports','creative','technology','sports','creative','other','other'];
+ const titles=['校园排球赛','网络文化作品征集','数字媒体竞赛','“至善杯”马拉松','“金橙子”微电影','学院竞赛项目申报','尚缺往届公告的项目'];
+ const cards=detailItems.map((detail,i)=>{
+  const article=document.createElement('article');article.className='comparison-card';article.dataset.group=mapping[i];
+  const h=document.createElement('h3');h.textContent=titles[i];article.append(h);
+  const brief=document.createElement('p');brief.className='compare-brief';brief.textContent=i<5?rows[i].cells[3].textContent:i===5?'学院项目申报，供寻找竞赛线索；不是学生报名。':'智能体大赛、西部计划的去年招募公告仍待补齐。';article.append(brief);
+  if(i<5){const years=document.createElement('div');years.className='compare-years';[2025,2026].forEach((year,n)=>{const box=document.createElement('div');box.className='compare-year';const label=document.createElement('strong');label.textContent=year+' 年';box.append(label,...[...rows[i].cells[n+1].childNodes].map(x=>x.cloneNode(true)));years.append(box)});article.append(years)}
+  detail.querySelector('summary').textContent=i<5?'展开规则变化与官方来源':'展开说明与来源';article.append(detail);grid.append(article);return article;
+ });
+ for(const [group,label] of groups){const b=document.createElement('button');b.type='button';b.textContent=label;b.dataset.group=group;b.setAttribute('aria-pressed','false');b.addEventListener('click',()=>{cards.forEach(c=>{c.hidden=c.dataset.group!==group;c.querySelector('details').open=false});categoryNav.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)))});categoryNav.append(b)}
+ categoryNav.querySelector('button').click();
+ const overview=document.createElement('details');overview.className='comparison-overview';const summary=document.createElement('summary');summary.textContent='查看五项活动的完整时间表';overview.append(summary,timeline);grid.after(overview);
+ const start=document.getElementById('materials');const panel=document.createElement('section');panel.id='material-panel';start.replaceWith(panel);while(panel.nextSibling)panel.append(panel.nextSibling);
+ const heading=document.createElement('h2');heading.className='material-heading';heading.tabIndex=-1;panel.prepend(heading);
+ const scope=panel.querySelector('.scope');const scopeSummary=document.createElement('details');const scopeTitle=document.createElement('summary');scopeTitle.textContent='资料范围与整理说明';scopeSummary.append(scopeTitle);while(scope.firstChild)scopeSummary.append(scope.firstChild);scope.append(scopeSummary);
+ // Keep lists short: detailed facts appear after opening a card.
+ const compactCards=()=>{panel.querySelectorAll('#cards>.card').forEach(card=>{const facts=card.querySelector(':scope > .facts');const details=card.querySelector('.detailbody');if(facts&&details)details.prepend(facts)})};
+ const cardsArea=panel.querySelector('#cards');new MutationObserver(compactCards).observe(cardsArea,{childList:true});compactCards();
+ const selectView=(view)=>{comparison.hidden=view!=='comparison';panel.hidden=view==='comparison';nav.querySelectorAll('a').forEach(a=>{if(a.dataset.view===view)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});if(view!=='comparison'){heading.textContent=view==='reference'?'参考资料':'活动与参与线索';panel.querySelector('[data-kind="'+view+'"]').click();panel.querySelectorAll('[data-category]').forEach(b=>{b.hidden=b.dataset.category!=='all'&&!batch.records.some(r=>r.record_kind===view&&r.category===b.dataset.category)});panel.querySelector('#month').hidden=view==='reference';compactCards()}};
+ const fromHash=()=>selectView(location.hash==='#references'?'reference':['#opportunities','#materials'].includes(location.hash)?'opportunity':'comparison');
+ nav.addEventListener('click',e=>{const a=e.target.closest('a[data-view]');if(!a)return;e.preventDefault();history.replaceState(null,'',a.getAttribute('href'));selectView(a.dataset.view)});
+ addEventListener('hashchange',fromHash);fromHash();
+})();
+</script>
+
+</body></html>
 
