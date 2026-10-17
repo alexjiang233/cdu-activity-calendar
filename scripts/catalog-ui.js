@@ -86,13 +86,15 @@
   const audience=version.audience||facts.find(f=>f.kind==='audience')?.value;
   if(audience)a.append(el('p','适合谁 · '+audience,'entry-audience compact-clause'));
   const keyFact=facts.find(f=>f.kind==='registration')||facts.find(f=>f.kind==='materials')||facts.find(f=>f.kind==='content');
-  if(keyFact)a.append(el('p',keyFact.value,'entry-takeaway compact-clause'));
+  if(entry.editorial_note)a.append(el('p',entry.editorial_note,'entry-takeaway compact-clause'));
+  else if(keyFact)a.append(el('p',keyFact.value,'entry-takeaway compact-clause'));
   const keyDate=version.deadline||version.stage_start;
   if(keyDate)a.append(el('p',(version.deadline?'所列截止 · ':'活动日期 · ')+date(keyDate),'compact-date'));
   else {const timing=facts.find(f=>['schedule','registration'].includes(f.kind)&&/\d{1,2}月\d{1,2}日|20\d{2}-\d{2}-\d{2}/.test(f.value));if(timing&&timing!==keyFact)a.append(el('p','时间 · '+timing.value,'compact-date compact-clause'));else if(!timing)a.append(el('p',(version.year?version.year+' 年':'历史')+'公告','compact-date'))}
   if(state.view==='compare')annualCompare(a,entry);
   const d=el('details',undefined,'entry-details');d.append(el('summary','查看详情'+(entry.versions.length>1?' · '+entry.versions.length+' 个公告版本':'')));const body=el('div',undefined,'detail-content');
   body.append(meta);
+  if(entry.editorial_note)body.append(el('h4','补充说明'),el('p',entry.editorial_note));
   if(entry.versions.length>1){const row=el('label',undefined,'edition-control');row.append(el('span','往届与通知版本'));const control=el('select');control.setAttribute('aria-label',entry.title+'的公告版本');for(const v of candidates){const option=el('option',(v.edition_label||v.year+'年')+' · '+(v.published||'日期未注明'));option.value=v.source_url;option.selected=v===version;control.append(option)}control.addEventListener('change',()=>{editionSelection.set(entry.id,control.value);const next=card(entry);next.querySelector('.entry-details').open=true;a.replaceWith(next);next.querySelector('select')?.focus()});row.append(control);body.append(row)}
   if(audience&&!facts.some(f=>f.kind==='audience'&&f.value===audience))body.append(el('p','参与对象：'+audience));
   activityProfile(body,version);

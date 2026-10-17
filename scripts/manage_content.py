@@ -83,7 +83,8 @@ def main(argv=None):
     commands = parser.add_subparsers(dest='command', required=True)
     migrate = commands.add_parser('migrate', help='仅首次：从已验收的公开网页无损迁移')
     migrate.add_argument('--release', type=Path, default=store.ROOT / 'public/index.html')
-    for command in (migrate, commands.add_parser('sync-legacy', help='经旧证据校验适配器接入资料更新')):
+    for command in (migrate, commands.add_parser('sync-legacy', help='经旧证据校验适配器接入资料更新'),
+                    commands.add_parser('prepare-review', help='经过旧证据校验后放入待确认，不改正式库')):
         command.add_argument('--batch-id', required=True)
         command.add_argument('--reason', required=True)
         command.add_argument('--expected-revision')
@@ -104,7 +105,7 @@ def main(argv=None):
     backup_cmd = commands.add_parser('backup', help='创建一致的数据库备份')
     backup_cmd.add_argument('--output', type=Path, required=True)
     args = parser.parse_args(argv)
-    if args.command in {'migrate', 'sync-legacy'}:
+    if args.command in {'migrate', 'sync-legacy', 'prepare-review'}:
         current = get_revision(args.db)
         if args.command == 'migrate':
             if current:
@@ -119,11 +120,20 @@ def main(argv=None):
                 raise ValueError('当前版本已改变，请先 check')
             health(args.db)
             catalog = store.legacy_catalog()
+            editorial = args.db.parent / 'admin-state.json'
+            if editorial.exists():
+                fields = json.loads(editorial.read_text(encoding='utf-8')).get('override_fields', {})
+                catalog = store.preserve_editorial(catalog, store.load_catalog(args.db), fields)
             from build_verification import public_data
             documents = {'batch': {'schema_version': 'official-public-1', 'records': [], 'inventory': []},
                          'verification': public_data()}
         if current and current != args.expected_revision:
             raise ValueError('当前版本已改变，请先 check')
+        if args.command == 'prepare-review':
+            from admin_server import Desk
+            result = Desk(args.db, credentials=False).stage(catalog)
+            print(json.dumps(result, ensure_ascii=False, indent=2))
+            return
         if current:
             with store.connect(args.db) as c:
                 saved = c.execute('SELECT catalog_hash FROM revisions WHERE revision=?', (current,)).fetchone()[0]

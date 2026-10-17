@@ -345,3 +345,18 @@ def legacy_catalog():
         e['material_ids'] = []
     validate_catalog(catalog)
     return catalog
+
+
+def preserve_editorial(catalog, current, field_ownership):
+    """Keep user-edited values from the DB; sidecar records field names only."""
+    allowed = {'title', 'category', 'category_label', 'editorial_note', 'featured', 'spotlight'}
+    previous = {entry['id']: entry for entry in current['entries']}
+    for entry in catalog['entries']:
+        if entry['id'] not in previous:
+            continue
+        for key in set(field_ownership.get(entry['id'], [])) & allowed:
+            if key in previous[entry['id']]:
+                entry[key] = previous[entry['id']][key]
+            else:
+                entry.pop(key, None)
+    return catalog

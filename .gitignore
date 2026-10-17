@@ -6,3 +6,9 @@ __pycache__/
 design-tools/
 data/*.sqlite3*
 data/backups/
+data/admin-state.json
+data/admin-launch.json
+data/admin-preview/
+data/publish-outbox/
+data/inbox/
+data/admin-*.tmp
