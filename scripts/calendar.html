@@ -1,0 +1,18 @@
+<section id="calendar-page" class="calendar-page" aria-labelledby="calendar-title" hidden>
+ <header class="calendar-heading"><div><h1 id="calendar-title">十月，可以做什么？</h1><p id="calendar-intro">从历年公告，找这个月份值得提前准备的事。</p></div><button type="button" id="calendar-mode" class="calendar-button">查看具体日期</button></header>
+ <details class="calendar-filter-disclosure"><summary id="calendar-filter-label">筛选</summary><div class="calendar-filters" aria-label="日历筛选">
+  <div class="calendar-segments" role="group" aria-label="时间类型"><button type="button" data-calendar-kind="all" aria-pressed="true">全部安排</button><button type="button" data-calendar-kind="deadline" aria-pressed="false">报名 / 提交截止</button><button type="button" data-calendar-kind="event" aria-pressed="false">活动时间</button></div>
+  <label class="calendar-field"><span>活动类型</span><select id="calendar-category"><option value="">全部类型</option></select></label>
+  <label class="calendar-field"><span>相关学院</span><select id="calendar-college"><option value="">全部学院</option></select></label>
+  <label class="calendar-featured"><input type="checkbox" id="calendar-featured" checked>只看精选</label>
+ </div></details>
+ <div class="calendar-month-heading"><div class="calendar-month-controls"><button type="button" id="calendar-prev" class="calendar-arrow" aria-label="上个月"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><h2 id="calendar-month-title" aria-live="polite"></h2><button type="button" id="calendar-next" class="calendar-arrow" aria-label="下个月"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div><div class="calendar-date-tools"><button type="button" id="calendar-today" class="calendar-button">本月</button><label class="calendar-year-label">年份 <select id="calendar-year" aria-label="日历年份"></select></label></div></div>
+ <div id="calendar-months" class="calendar-months" role="group" aria-label="选择月份"></div>
+ <div class="calendar-summary"><p id="calendar-month-count" role="status"></p><button type="button" id="calendar-show-list" class="calendar-reset" aria-expanded="false">本月清单</button><div class="calendar-legend"><span class="calendar-legend-deadline">报名 / 提交截止</span><span class="calendar-legend-event">活动阶段</span></div></div>
+ <section id="calendar-seasonal" aria-label="历年这个月份的活动"><div id="calendar-seasonal-list" class="calendar-seasonal-list"></div></section>
+ <div class="calendar-layout"><div class="calendar-board"><div class="calendar-weekdays" aria-hidden="true"><span>周一</span><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span>周六</span><span>周日</span></div><div id="calendar-grid" class="calendar-grid" role="group" aria-label="日历日期"></div></div>
+  <section class="calendar-agenda" aria-labelledby="calendar-agenda-title"><div class="calendar-agenda-heading"><h2 id="calendar-agenda-title">本月安排</h2><button type="button" id="calendar-hide-list" class="calendar-reset">收起</button><button type="button" id="calendar-clear-day" class="calendar-reset" hidden>查看整月</button></div><div id="calendar-agenda" aria-live="polite"></div></section>
+ </div>
+ <p class="calendar-footnote">日历只使用原文明示的完整日期；公告发布日期不作为活动时间。历史安排不代表今年仍按相同时间举办。</p>
+ <a href="?month=unknown#all" class="calendar-undated" id="calendar-undated">查看尚无明确活动日期的通知</a>
+</section>

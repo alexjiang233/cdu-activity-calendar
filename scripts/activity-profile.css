@@ -1,0 +1,20 @@
+.profile-status{font-size:14px!important;color:var(--muted)!important;margin:8px 0}
+.profile-section{margin:16px 0 18px;border-top:1px solid var(--line);padding-top:12px}
+.profile-section h5{font-size:14px;margin:0 0 6px}
+.profile-section ul{margin:0;padding-left:20px}
+.profile-section li{margin:6px 0 10px}
+.profile-attachment{margin:4px 0}
+/* Concise facts retain the established red theme and full keyboard controls. */
+.entry-highlights{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:8px 16px;margin:18px 0;line-height:1.7;font-size:16px}
+.entry-highlights dt{font-weight:650;color:var(--ink)}
+.entry-highlights dd{margin:0;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+.edition-control{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:14px 0;font-size:15px}
+.edition-control select{max-width:100%;min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;font:inherit}
+.profile-original,.profile-attachments{margin-top:22px;padding-top:14px;border-top:1px solid var(--line)}
+.profile-original summary,.profile-attachments summary{cursor:pointer;min-height:44px;display:flex;align-items:center;font-weight:600}
+.entry-source{display:flex;gap:18px;align-items:center;flex-wrap:wrap;margin-top:24px;font-size:15px}
+.profile-section li{overflow-wrap:anywhere;max-width:75ch;line-height:1.8;margin-bottom:10px}
+.year-shortcuts{display:flex;gap:8px;overflow-x:auto;padding:8px 0 18px;margin-bottom:10px;scrollbar-width:thin}
+.year-shortcuts button{white-space:nowrap;min-height:44px;padding:8px 15px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.year-shortcuts button[aria-pressed=true]{background:#b32029;color:#fff;border-color:#b32029}
+@media(max-width:540px){.entry-highlights{grid-template-columns:1fr;gap:4px}.entry-highlights dd{margin-bottom:10px}.edition-control{display:grid;grid-template-columns:1fr}.edition-control select{width:100%;min-width:0}}

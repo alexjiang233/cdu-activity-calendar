@@ -1,0 +1,8 @@
+work/
+preview/
+__pycache__/
+*.pyc
+.venv/
+design-tools/
+data/*.sqlite3*
+data/backups/

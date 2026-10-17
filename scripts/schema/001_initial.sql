@@ -1,0 +1,23 @@
+-- Application schema 1. Raw/private documents are deliberately outside this DB.
+PRAGMA foreign_keys=ON;
+BEGIN;
+CREATE TABLE catalog_metadata(id INTEGER PRIMARY KEY CHECK(id=1), extras TEXT NOT NULL, layout TEXT NOT NULL);
+CREATE TABLE site_documents(name TEXT PRIMARY KEY CHECK(name IN ('batch','verification')),payload TEXT NOT NULL);
+CREATE TABLE taxonomy(kind TEXT NOT NULL CHECK(kind IN ('college','level')),code TEXT NOT NULL,label TEXT NOT NULL,position INTEGER NOT NULL,PRIMARY KEY(kind,code));
+CREATE TABLE activities(id TEXT PRIMARY KEY,title TEXT NOT NULL,kind TEXT NOT NULL,category TEXT NOT NULL,featured INTEGER,spotlight INTEGER,position INTEGER NOT NULL,extras TEXT NOT NULL,layout TEXT NOT NULL);
+CREATE TABLE sources(id TEXT PRIMARY KEY,url TEXT NOT NULL UNIQUE);
+CREATE TABLE notices(id TEXT PRIMARY KEY,activity_id TEXT NOT NULL REFERENCES activities(id),source_id TEXT NOT NULL UNIQUE REFERENCES sources(id),year INTEGER,published TEXT,deadline TEXT,deadline_kind TEXT,stage_start TEXT,stage_end TEXT,audience TEXT,conflict INTEGER,position INTEGER NOT NULL,extras TEXT NOT NULL,layout TEXT NOT NULL);
+CREATE TABLE notice_taxonomy(notice_id TEXT NOT NULL REFERENCES notices(id),kind TEXT NOT NULL,code TEXT NOT NULL,position INTEGER NOT NULL,PRIMARY KEY(notice_id,kind,code),FOREIGN KEY(kind,code) REFERENCES taxonomy(kind,code));
+CREATE TABLE profiles(notice_id TEXT PRIMARY KEY REFERENCES notices(id),payload TEXT NOT NULL);
+CREATE TABLE facts(id TEXT PRIMARY KEY,notice_id TEXT NOT NULL REFERENCES notices(id),position INTEGER NOT NULL,kind TEXT,value TEXT,quote TEXT,locator TEXT,source_url TEXT,basis TEXT,extras TEXT NOT NULL,layout TEXT NOT NULL,UNIQUE(notice_id,position));
+CREATE TABLE revisions(revision TEXT PRIMARY KEY,batch_id TEXT NOT NULL UNIQUE,parent_revision TEXT REFERENCES revisions(revision),created_at TEXT NOT NULL,reason TEXT NOT NULL,origin TEXT NOT NULL,catalog_hash TEXT NOT NULL,snapshot BLOB NOT NULL);
+CREATE TABLE current_state(id INTEGER PRIMARY KEY CHECK(id=1),revision TEXT NOT NULL REFERENCES revisions(revision));
+CREATE TABLE changes(revision TEXT NOT NULL REFERENCES revisions(revision),entity_kind TEXT NOT NULL,entity_id TEXT NOT NULL,action TEXT NOT NULL,before_hash TEXT,after_hash TEXT,PRIMARY KEY(revision,entity_kind,entity_id));
+CREATE INDEX notices_activity ON notices(activity_id);
+CREATE INDEX notices_year ON notices(year);
+CREATE INDEX notices_deadline ON notices(deadline);
+CREATE INDEX activities_category ON activities(category);
+CREATE INDEX taxonomy_lookup ON notice_taxonomy(kind,code);
+CREATE INDEX facts_notice_kind ON facts(notice_id,kind);
+PRAGMA user_version=1;
+COMMIT;
