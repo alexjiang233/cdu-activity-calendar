@@ -10,7 +10,7 @@
   const cutoff=endTime(version.deadline);
   if(cutoff){if(cutoff>=now)return {id:cutoff.slice(0,10)===day?'today':'before_deadline',label:cutoff.slice(0,10)===day?'今日截止':'所列截止前',tone:'active'};
    if((end&&end<day)||(!end&&start&&start<day))return {id:'past',label:'所列日期已过',tone:'muted'};
-   return {id:'deadline_passed',label:version.deadline_kind==='submission'?'交作品已截止':version.deadline_kind==='notice'?'所列截止已过':'报名已截止',tone:'warning'};}
+   return {id:'deadline_passed',label:version.deadline_kind==='submission'?'交作品已截止':version.deadline_kind==='combined'?'报名及作品已截止':version.deadline_kind==='notice'?'所列截止已过':'报名已截止',tone:'warning'};}
   if(start&&start>day)return {id:'upcoming',label:'活动日期未到',tone:'muted'};
   if(start&&start===day)return {id:'scheduled',label:'通知所列活动日',tone:'active'};
   if(start&&start<day)return {id:'past',label:'所列起始日已过',tone:'muted'};

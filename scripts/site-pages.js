@@ -33,7 +33,7 @@
    document.getElementById('query-heading-title').textContent='活动探索';
    document.querySelectorAll('.global-nav a').forEach(a=>{const active=a.dataset.page===next;if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
    document.title=(next==='home'?'在大学里，多发现一种可能':next==='about'?'关于这个项目':next==='calendar'?'活动日历':'活动探索')+' · CDU Activity Calendar';
-   if(page!==null&&page!==next){window.scrollTo({top:0,behavior:'instant'});const surface=document.getElementById(next==='home'?'landing':next==='about'?'about':next==='calendar'?'calendar-page':'query-page');if(!reduced.matches&&document.documentElement.dataset.inputMethod!=='keyboard'&&surface.animate)surface.animate([{opacity:.65,clipPath:'inset(0 0 3% 0)'},{opacity:1,clipPath:'inset(0)'}],{duration:240,easing:'cubic-bezier(.16,1,.3,1)'})}page=next;if(next==='home')requestAnimationFrame(()=>{sizeMarquee();updateScrollMotion();playHero()});
+   if(page!==null&&page!==next){window.scrollTo({top:0,behavior:'instant'});const surface=document.getElementById(next==='home'?'landing':next==='about'?'about':next==='calendar'?'calendar-page':'query-page');if(!reduced.matches&&document.documentElement.dataset.inputMethod!=='keyboard'&&surface.animate)surface.animate([{opacity:.55,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}],{duration:260,easing:'cubic-bezier(.16,1,.3,1)'})}page=next;if(next==='home')requestAnimationFrame(()=>{sizeMarquee();updateScrollMotion();playHero()});
  }
  const reduced=matchMedia('(prefers-reduced-motion:reduce)');let paused=reduced.matches;
  const toggle=document.getElementById('motion-toggle');

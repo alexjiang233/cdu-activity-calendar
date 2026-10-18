@@ -18,3 +18,7 @@
 .year-shortcuts button{white-space:nowrap;min-height:44px;padding:8px 15px;border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;font:inherit;cursor:pointer}
 .year-shortcuts button[aria-pressed=true]{background:#b32029;color:#fff;border-color:#b32029}
 @media(max-width:540px){.entry-highlights{grid-template-columns:1fr;gap:4px}.entry-highlights dd{margin-bottom:10px}.edition-control{display:grid;grid-template-columns:1fr}.edition-control select{width:100%;min-width:0}}
+.detail-quickfacts{display:grid;grid-template-columns:minmax(90px,auto) minmax(0,1fr);gap:8px 16px;margin:0 0 20px;padding:16px 18px;background:var(--wash);border-left:3px solid var(--green);border-radius:0 8px 8px 0}
+.detail-quickfacts dt{font-size:14px;color:var(--muted);font-weight:650}
+.detail-quickfacts dd{margin:0;font-size:15px;line-height:1.7;overflow-wrap:anywhere}
+@media(max-width:700px){.detail-quickfacts{grid-template-columns:1fr;gap:3px 0;padding:14px}.detail-quickfacts dd{margin-bottom:8px}.detail-quickfacts dd:last-child{margin-bottom:0}}
