@@ -475,7 +475,7 @@ body.home-paused #landing *,body.home-paused #landing *::before,body.home-paused
     <div class="shell hero-layout">
       <div class="hero-copy">
         <h1 id="home-title"><span class="hero-line">在大学里，</span><span class="hero-line">多发现</span><span class="lime-word hero-line">一种可能。</span></h1>
-        <div class="hero-actions"><a class="home-button" href="#discover">找点想做的事 <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></a><a class="quiet-link" href="#compare">看看往届 <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></a></div>
+        <div class="hero-actions"><a class="home-button" href="#discover">找点想做的事 <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></a><a class="quiet-link" href="#compare">看看往届 <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></a><a class="quiet-link" href="#calendar">按月看活动 <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18M8 15h2m4 0h2"/></svg></a></div>
         <p class="hero-note">比赛、创作、实践。你的大学，不止课表。</p>
       </div>
       <div class="activity-stage" aria-label="精选活动预览">
@@ -493,7 +493,7 @@ body.home-paused #landing *,body.home-paused #landing *::before,body.home-paused
   </section>
   <section class="home-interlude" aria-label="下一次，换你上场"><div class="shell interlude-layout"><svg class="interlude-star" viewBox="0 0 100 100" aria-hidden="true" fill="none"><path d="M50 4v92M4 50h92M17.5 17.5l65 65m0-65-65 65"/><circle cx="50" cy="50" r="28"/></svg><h2><span>下一次，</span><strong>换你上场。</strong></h2><span class="interlude-rule" aria-hidden="true"></span></div></section>
   <section class="home-picks shell" aria-labelledby="picks-title"><div class="home-section-heading"><h2 id="picks-title">先看这几项。</h2><a href="#discover" class="quiet-link">全部精选 <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></a></div><div id="home-picks" class="home-pick-list"></div></section>
-  <section class="home-history"><div class="shell history-layout"><div><h2>今年想参加，<br><span>先看看去年。</span></h2><a class="home-button" href="#compare">打开往届对比 <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></a></div><div class="history-preview"><div class="history-years"><span>2021</span><svg viewBox="0 0 100 24" fill="none" aria-hidden="true"><path pathLength="1" d="M0 12h96m-10-9 10 9-10 9"/></svg><span>2026</span></div><p>同一个活动，历届通知。<br>时间、条件、作品要求，放在一起看。</p><p class="history-caution">历史供参考，当届安排回到原文确认。</p></div></div></section>
+  <section class="home-history"><div class="shell history-layout"><div><h2>想参加之前，<br><span>先看看往届。</span></h2><a class="home-button" href="#compare">打开往届对比 <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></a></div><div class="history-preview"><div class="history-years"><span>2021</span><svg viewBox="0 0 100 24" fill="none" aria-hidden="true"><path pathLength="1" d="M0 12h96m-10-9 10 9-10 9"/></svg><span>2026</span></div><p>同一个活动，历届通知。<br>时间、条件、作品要求，放在一起看。</p><p class="history-caution">历史供参考，当届安排回到原文确认。</p></div></div></section>
   <section class="home-end shell"><h2>把下一次尝试，<br>放进大学生活。</h2><a class="round-link" href="#discover" aria-label="进入活动查询"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M12 36 36 12M12 12h24v24"/></svg></a></section>
 </section>
 <section id="query-page" class="query-page" hidden><section class="intro query-heading"><h1 id="query-heading-title">活动探索</h1><a href="#about">资料说明</a></section>
@@ -673,9 +673,9 @@ body.home-paused #landing *,body.home-paused #landing *::before,body.home-paused
  function show(view){
    const next=view==='home'?'home':view==='about'?'about':view==='calendar'?'calendar':'query';
    document.getElementById('landing').hidden=next!=='home';document.getElementById('query-page').hidden=next!=='query';document.getElementById('about').hidden=next!=='about';document.getElementById('calendar-page').hidden=next!=='calendar';document.body.dataset.page=next;document.dispatchEvent(new Event('cdu:view'));
-   document.getElementById('query-heading-title').textContent='活动探索';
+   document.getElementById('query-heading-title').textContent=view==='compare'?'往届对比':'活动探索';
    document.querySelectorAll('.global-nav a').forEach(a=>{const active=a.dataset.page===next;if(active)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});
-   document.title=(next==='home'?'在大学里，多发现一种可能':next==='about'?'关于这个项目':next==='calendar'?'活动日历':'活动探索')+' · CDU Activity Calendar';
+   document.title=(next==='home'?'在大学里，多发现一种可能':next==='about'?'关于这个项目':next==='calendar'?'活动日历':view==='compare'?'往届对比':'活动探索')+' · CDU Activity Calendar';
    if(page!==null&&page!==next){window.scrollTo({top:0,behavior:'instant'});const surface=document.getElementById(next==='home'?'landing':next==='about'?'about':next==='calendar'?'calendar-page':'query-page');if(!reduced.matches&&document.documentElement.dataset.inputMethod!=='keyboard'&&surface.animate)surface.animate([{opacity:.55,transform:'translateY(8px)'},{opacity:1,transform:'translateY(0)'}],{duration:260,easing:'cubic-bezier(.16,1,.3,1)'})}page=next;if(next==='home')requestAnimationFrame(()=>{sizeMarquee();updateScrollMotion();playHero()});
  }
  const reduced=matchMedia('(prefers-reduced-motion:reduce)');let paused=reduced.matches;
