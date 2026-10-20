@@ -693,6 +693,12 @@ html[data-input-method=keyboard] .global-nav a[aria-current=page]::after{transfo
 .fab-stack .rail-tip{right:calc(100% + 10px);left:auto}
 .fab-stack button:hover .rail-tip,.fab-stack button:focus-visible .rail-tip{opacity:1;transform:translateY(-50%) scale(1)}
 
+/* 手机上指南页的装饰卡缩小后难以辨认，直接让位给标题与正文 */
+@media(max-width:600px){
+ .guide-heading{grid-template-columns:minmax(0,1fr)!important}
+ .guide-heading .page-art{display:none}
+}
+
 </style><script id="cdu-projection">/* 公开投影：只做两件事——把与校级重复的院级通知收进校级详情，标记不进精选的院级初赛。
    内嵌的活动数据本身不改，隐藏条目的原始记录仍留在页面的 catalog-data 里。 */
 window.CduProjection = (function () {
