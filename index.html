@@ -875,7 +875,7 @@ body.home-paused #landing *,body.home-paused #landing *::before,body.home-paused
 
  document.getElementById('college-policy').textContent=catalog.college_policy;
  document.getElementById('year-policy').textContent=catalog.year_policy;
- if(catalog.coverage){const c=catalog.coverage;document.getElementById('coverage').textContent='资料覆盖 '+c.range[0]+' 至 '+c.range[1]+'；精选页展示竞赛、项目、实践与招募，其他通知保留在资料库。'}
+ if(catalog.coverage){const c=catalog.coverage;document.getElementById('coverage').textContent='资料覆盖 '+c.range[0]+' 至 '+c.range[1]+'；精选页展示竞赛、项目、实践与招募，其他通知可在全部活动中查找。'}
  function storedCollege(){try{return localStorage.getItem('cdu-college-preference')||'any'}catch{return 'any'}}
  function readState(){const u=new URL(location.href);for(const k of filterKeys)state[k]=u.searchParams.get(k)||(k==='month_basis'?'seasonal':k==='interest'?storedCollege():'');const h=u.hash;state.view=h==='#registration'?'registration':['#compare','#year-comparison'].includes(h)?'compare':['#reference','#references'].includes(h)?'all':h==='#calendar'?'calendar':h==='#about'?'about':h==='#home'?'home':h==='#discover'?'discover':h==='#all'||h==='#results'||['q','college','level','year','category','phase','month'].some(k=>state[k])?'all':'home';
   if(!catalog.colleges[state.interest])state.interest='any';if(state.college&&!catalog.colleges[state.college])state.college='';if(state.level&&!catalog.levels[state.level])state.level='';state.category=[...new Set(state.category.split(',').filter(k=>categories[k]))].join(',');if(!['seasonal','event','deadline'].includes(state.month_basis))state.month_basis='seasonal';if(state.month&&!['unknown',...Array.from({length:12},(_,i)=>String(i+1))].includes(state.month))state.month='';
