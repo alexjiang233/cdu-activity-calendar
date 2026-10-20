@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#6b1723"><meta name="description" content="按学院、年份、类别和通知时间，发现成都大学校园活动与往届准备线索。"><title>CDU Activity Calendar · 校园活动索引</title>
+</head><body>
+<a href="#results" class="skip">跳到活动结果</a>
+<header class="topbar"><div class="shell"><a class="brand" href="#home" aria-label="CDU Activity Calendar 首页"><svg viewBox="0 0 40 40" fill="none" stroke-width="1.6" aria-hidden="true"><rect x="5" y="8" width="30" height="28" rx="5"/><path d="M5 16h30M13 4v8M27 4v8M12 23h5M23 23h5M12 29h5"/></svg><span translate="no">CDU Activity Calendar<small>成都大学校园生活与活动</small></span></a><nav class="global-nav" aria-label="网站导航"><a href="#home" data-page="home">首页</a><a href="#discover" data-page="query">活动探索</a><a href="#calendar" data-page="calendar">活动日历</a><a href="#guides" data-page="guides">校园指南</a><a href="#about" data-page="about">关于</a></nav></div></header>
+<main class="shell"><section id="landing" aria-labelledby="home-title">
+  <section class="home-hero">
+    <div class="shell hero-layout">
+      <div class="hero-copy">
+        <h1 id="home-title"><span class="hero-line">在大学里，</span><span class="hero-line">多发现</span><span class="lime-word hero-line">一种可能。</span></h1>
+        <div class="hero-actions hero-actions-triple"><a class="home-button" href="#discover">找点想做的事 <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></a><a class="home-button" href="#calendar">按月看活动 <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18M8 15h2m4 0h2"/></svg></a><a class="home-button" href="#guides">校园指南 <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 5h6v14H5zM13 5h6v14h-6z"/></svg></a></div>
+        <p class="hero-note">比赛、创作、实践。你的大学，不止课表。</p>
+      </div>
+      <div class="activity-stage" aria-label="精选活动预览">
+        <svg class="orbit-art" viewBox="0 0 520 520" fill="none" aria-hidden="true"><circle cx="260" cy="260" r="230"/><ellipse cx="260" cy="260" rx="230" ry="122" transform="rotate(-35 260 260)"/><ellipse cx="260" cy="260" rx="230" ry="122" transform="rotate(35 260 260)"/><path d="M30 260h460M260 30v460"/><circle class="orbit-dot" cx="260" cy="30" r="9"/></svg>
+        <div class="stage-word" aria-hidden="true">GO<br>BEYOND.</div>
+        <div id="hero-activities" class="hero-activities"></div>
+        <div class="stage-controls"><button id="swap-activities" class="swap-activities" type="button">换一批</button><button id="motion-toggle" class="motion-toggle" type="button" aria-pressed="false">暂停动效</button></div><span id="swap-status" class="sr-only" role="status" aria-live="polite"></span>
+      </div>
+    </div>
+  </section>
+  <div class="interest-wrap" aria-hidden="true"><div class="interest-band"><div class="interest-track"><div class="interest-group"><span class="interest-unit">去比赛 · 去创作 · 去实践 · 去遇见 ·</span></div><div class="interest-group"><span class="interest-unit">去比赛 · 去创作 · 去实践 · 去遇见 ·</span></div></div></div></div>
+  <section class="home-life" aria-labelledby="home-life-title"><div class="shell home-life-grid"><div class="home-life-copy"><p class="home-life-kicker">CAMPUS / GUIDE</p><h2 id="home-life-title">有想做的事，<br><span>也有要办的事。</span></h2><p>上网、跑步、进社团——三条操作指南把第一次遇到的问题拆成能照着走的步骤；六项查询收录网络报修、统一认证与图书馆入口。</p><a class="home-button" href="#guides">打开校园指南 <span aria-hidden="true">↗</span></a></div><ul class="home-life-cards"><li><a href="#guide/mobile-network"><span class="hl-no">01</span><span><strong>把宿舍的网连上</strong><small>接线、拨号、按错误码查起</small></span><span class="hl-go" aria-hidden="true">↗</span></a></li><li><a href="#guide/running"><span class="hl-no">02</span><span><strong>第一次用体适能跑步</strong><small>登录、点位、跑完看记录</small></span><span class="hl-go" aria-hidden="true">↗</span></a></li><li><a href="#guide/join-club"><span class="hl-no">03</span><span><strong>在 ISP 申请加入社团</strong><small>找到社团，登记加入</small></span><span class="hl-go" aria-hidden="true">↗</span></a></li><li><a href="#services"><span class="hl-no">04</span><span><strong>要打电话、找入口</strong><small>网络报修 028-84616789 等六项</small></span><span class="hl-go" aria-hidden="true">↗</span></a></li></ul></div></section><section class="home-explore shell" aria-labelledby="explore-title">
+    <div class="home-section-heading"><h2 id="explore-title">从兴趣，<br>找到入口。</h2><p>挑一个方向，看看校园里发生过什么。</p></div>
+    <div class="category-board" id="home-categories"></div>
+  </section>
+  <section class="home-interlude" aria-label="下一次，换你上场"><div class="shell interlude-layout"><svg class="interlude-star" viewBox="0 0 100 100" aria-hidden="true" fill="none"><path d="M50 4v92M4 50h92M17.5 17.5l65 65m0-65-65 65"/><circle cx="50" cy="50" r="28"/></svg><h2><span>下一次，</span><strong>换你上场。</strong></h2><span class="interlude-rule" aria-hidden="true"></span></div></section>
+  <section class="home-picks shell" aria-labelledby="picks-title"><div class="home-section-heading"><h2 id="picks-title">先看这几项。</h2><a href="#discover" class="quiet-link">全部精选 <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></a></div><div id="home-picks" class="home-pick-list"></div></section>
+  <section class="home-history"><div class="shell history-layout"><div><h2>想参加之前，<br><span>先看看往届。</span></h2><a class="home-button" href="#compare">打开往届对比 <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></a></div><div class="history-preview"><div class="history-years"><span>2021</span><svg viewBox="0 0 100 24" fill="none" aria-hidden="true"><path pathLength="1" d="M0 12h96m-10-9 10 9-10 9"/></svg><span>2026</span></div><p>同一个活动，历届通知。<br>时间、条件、作品要求，放在一起看。</p><p class="history-caution">历史供参考，当届安排回到原文确认。</p></div></div></section>
+  <section class="home-end shell"><h2>把下一次尝试，<br>放进大学生活。</h2><a class="round-link" href="#discover" aria-label="进入活动查询"><svg viewBox="0 0 48 48" fill="none" aria-hidden="true"><path d="M12 36 36 12M12 12h24v24"/></svg></a></section>
+</section>
+<section id="query-page" class="query-page" hidden><header class="intro query-heading editorial-heading"><div class="editorial-heading-copy"><p class="editorial-kicker">CDU / DISCOVER</p><h1 id="query-heading-title">活动探索</h1><p class="editorial-deck">从月份、类型和学院开始，找到想参与的事。</p><a href="#about">资料说明 <span aria-hidden="true">↗</span></a></div><div class="page-art art-explore" aria-hidden="true"><i class="art-orbit orbit-one"></i><i class="art-orbit orbit-two"></i><span class="art-backword">GO</span><div class="art-ticket ticket-one"><small>01 / 试试看</small><b>比赛</b></div><div class="art-ticket ticket-two"><small>02 / 去体验</small><b>实践</b></div><div class="art-ticket ticket-three"><small>03 / 来相遇</small><b>社团</b></div><span class="art-hand">去发现</span><i class="art-dot"></i></div></header>
+<nav id="views" class="navigation" aria-label="浏览内容"><a href="#discover" data-view="discover">精选活动</a><a href="#all" data-view="all">全部活动</a><a href="#registration" data-view="registration">当前报名</a><a href="#compare" data-view="compare">往届对比</a></nav>
+<div class="workspace explore-workspace">
+<section class="explore-controls" aria-label="查找活动"><div class="college-preference"><label for="my-college">我的学院</label><select id="my-college" aria-describedby="college-hint"><option value="any">先看看全部学院</option></select><p id="college-hint"></p></div>
+<label class="sr-only" for="query">搜索活动、兴趣或参与要求</label><div class="searchbox"><svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></svg><input type="search" id="query" name="q" autocomplete="off" placeholder="搜索活动、兴趣或参与要求…"><button type="button" id="clear-query" hidden>清空搜索</button></div>
+
+<div class="month-heading"><h2>月份</h2><label for="month_basis" class="timing-choice">按<select id="month_basis" aria-label="月份依据" aria-describedby="month-help"><option value="seasonal">往年参与月份</option><option value="event">举办月份</option><option value="deadline">报名 / 提交截止月份</option></select></label></div>
+<div id="month-tabs" class="month-tabs" role="group" aria-label="选择月份"></div>
+<div class="type-heading"><h2>活动类型</h2><span>可多选</span></div>
+<div id="category-tabs" class="category-tabs" role="group" aria-label="选择活动类型"></div>
+<div class="filter-toolbar"><details class="filter-panel" id="filters"><summary>更多筛选</summary><div class="filter-body"><div class="filter-group"><label for="level">级别 / 范围</label><select id="level" name="level"><option value="">全部范围</option></select></div><div class="filter-group"><label for="college">公告相关学院</label><select id="college" name="college"><option value="">全部学院</option></select></div><div class="filter-group"><label for="year">年份</label><select id="year" name="year"><option value="">全部年份</option><option value="2026">2026 年</option><option value="2025">2025 年</option><option value="unknown">年份未明确</option></select></div><div class="filter-group"><label for="phase">时间状态</label><select id="phase" name="phase"><option value="">全部状态</option><option value="today">今日截止</option><option value="before_deadline">所列截止前</option><option value="deadline_passed">截止已过，后续待核实</option><option value="scheduled">通知所列活动期</option><option value="upcoming">活动日期未到</option><option value="past">所列日期已过</option><option value="unknown">时间或版本待核实</option></select><p class="sr-only" id="time-help">按北京时间与通知日期计算，不代表实时开放情况。</p></div><details class="sidebar-note"><summary>标签怎样确定？</summary><p>级别依据标题或已核验通知；全国赛事的校内、省级选拔可同时检索。未明确的标为待核实。</p><p id="college-policy"></p><p id="year-policy"></p><p>活动类型可多选；月份、学院等条件组合筛选，日期不明的记录可选“日期待补”。</p></details></div></details><button class="text-button" type="button" id="reset">清除全部</button></div>
+<p id="month-help" class="month-help">仅按通知中已知日期归类；历史月份不代表今年安排。</p>
+</section>
+<section class="results" id="results" aria-labelledby="result-title"><div id="active-tags" class="active-tags" aria-label="已选筛选条件"></div><div class="result-heading"><h2 id="result-title">精选活动</h2><span id="count" class="count" role="status" aria-live="polite"></span></div><p id="view-description" class="sr-only"></p><div id="catalog-list" class="catalog-list"></div></section></div>
+
+</section><section id="calendar-page" class="calendar-page" aria-labelledby="calendar-title" hidden>
+ <header class="calendar-heading editorial-heading"><div class="editorial-heading-copy"><p class="editorial-kicker">CDU / CALENDAR</p><h1 id="calendar-title">十月，可以做什么？</h1><p id="calendar-intro">从历年公告，找这个月份值得提前准备的事。</p><button type="button" id="calendar-mode" class="calendar-button">查看具体日期 <span aria-hidden="true">↗</span></button></div><div class="page-art art-calendar" aria-hidden="true"><i class="art-orbit orbit-one"></i><i class="art-orbit orbit-two"></i><span class="art-backword">OCT</span><div class="mini-calendar"><div class="mini-calendar-top"><span>OCTOBER</span><b>10</b></div><div class="mini-calendar-grid"></div></div><span class="art-hand">十月 · 先看一眼</span><i class="art-dot"></i></div></header>
+ <details class="calendar-filter-disclosure"><summary id="calendar-filter-label">筛选</summary><div class="calendar-filters" aria-label="日历筛选">
+  <div class="calendar-segments" role="group" aria-label="时间类型"><button type="button" data-calendar-kind="all" aria-pressed="true">全部安排</button><button type="button" data-calendar-kind="deadline" aria-pressed="false">报名 / 提交截止</button><button type="button" data-calendar-kind="event" aria-pressed="false">活动时间</button></div>
+  <label class="calendar-field"><span>活动类型</span><select id="calendar-category"><option value="">全部类型</option></select></label>
+  <label class="calendar-field"><span>相关学院</span><select id="calendar-college"><option value="">全部学院</option></select></label>
+  <label class="calendar-featured"><input type="checkbox" id="calendar-featured" checked>只看精选</label>
+ </div></details>
+ <div class="calendar-month-heading"><div class="calendar-month-controls"><button type="button" id="calendar-prev" class="calendar-arrow" aria-label="上个月"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14 6-6 6 6 6"/></svg></button><h2 id="calendar-month-title" aria-live="polite"></h2><button type="button" id="calendar-next" class="calendar-arrow" aria-label="下个月"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m10 6 6 6-6 6"/></svg></button></div><div class="calendar-date-tools"><button type="button" id="calendar-today" class="calendar-button">本月</button><label class="calendar-year-label">年份 <select id="calendar-year" aria-label="日历年份"></select></label></div></div>
+ <div id="calendar-months" class="calendar-months" role="group" aria-label="选择月份"></div>
+ <div class="calendar-summary"><p id="calendar-month-count" role="status"></p><button type="button" id="calendar-show-list" class="calendar-reset" aria-expanded="false">本月清单</button><div class="calendar-legend"><span class="calendar-legend-deadline">报名 / 提交截止</span><span class="calendar-legend-event">活动开始 / 结束</span></div></div>
+ <section id="calendar-seasonal" aria-label="历年这个月份的活动"><div id="calendar-seasonal-list" class="calendar-seasonal-list"></div></section>
+ <div class="calendar-layout"><div class="calendar-board"><div class="calendar-weekdays" aria-hidden="true"><span>周一</span><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span>周六</span><span>周日</span></div><div id="calendar-grid" class="calendar-grid" role="group" aria-label="日历日期"></div></div>
+  <section class="calendar-agenda" aria-labelledby="calendar-agenda-title"><div class="calendar-agenda-heading"><h2 id="calendar-agenda-title">本月安排</h2><button type="button" id="calendar-hide-list" class="calendar-reset">收起</button><button type="button" id="calendar-clear-day" class="calendar-reset" hidden>查看整月</button></div><div id="calendar-agenda" aria-live="polite"></div></section>
+ </div>
+ <p class="calendar-footnote">日历只使用原文明示的完整日期；公告发布日期不作为活动时间。历史安排不代表今年仍按相同时间举办。</p>
+ <a href="?month=unknown#all" class="calendar-undated" id="calendar-undated">查看尚无明确活动日期的通知</a>
+</section>
+<section class="about-page" id="about" aria-labelledby="about-title" hidden><header class="about-heading editorial-heading"><div class="editorial-heading-copy"><p class="editorial-kicker">CDU / ABOUT</p><h1 id="about-title">从一位新生的<br>好奇开始。</h1><p class="editorial-deck">一点好奇，慢慢长成一份校园生活指南。</p></div><div class="page-art art-about" aria-hidden="true"><i class="art-orbit orbit-one"></i><i class="art-orbit orbit-two"></i><span class="art-backword">CDU</span><div class="about-paper paper-one"><small>FIELD NOTES</small><b>校园<br>片段</b></div><div class="about-paper paper-two"><small>VOL. 01</small><b>从这里<br>开始</b></div><span class="art-hand">一起补充</span><i class="art-dot"></i></div></header><p class="about-lead">把分散的校园活动整理在一起，让下一次尝试更容易被看见。</p><div class="about-sections"><section><h2>这是怎样一个项目？</h2><p>这是成都大学学生自主整理的校园活动项目，不是学校官方平台。当前公开索引包含 <strong id="about-count"></strong> 条活动及资料记录，包含历史公告。</p><p id="coverage"></p></section><section><h2>怎么使用？</h2><p>按学院、年份、活动类型或级别查找；展开详情了解条件，再回到官方原文。往届对比可以帮助准备，历史通知不保证当届仍开放参与。</p></section><section><h2>资料可信到什么程度？</h2><p>活动保留各年度公告、参与条件与来源链接。部分规则写在官方附件里，详情只保留已提取的条款，完整内容请看官方原文。</p><p>图片转录、日期冲突和未知项分别标记；后续检索未覆盖所有公众号、群消息及赛事更新。</p></section><section><h2>哪些边界需要留意？</h2><p>我的学院依据原文明示参与对象匹配；公告相关学院表示组织相关，不代表报名资格。时间状态根据通知日期推算，实际安排以当届正式更新为准。</p><p>只公开官网来源条目；原始个人文件、未授权的私人联系信息、本地路径和内部审核资料不随网页公开。近五年资料正在分批补充，目前尚未完整覆盖。</p></section></div><section class="connect-section" aria-labelledby="connect-title"><h2 id="connect-title">关注与联系</h2><div class="contact-icons"><a href="https://space.bilibili.com/503844297" target="_blank" rel="noopener noreferrer" aria-label="打开B站主页"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="15" rx="4"/><path d="m7 2 3 4m7-4-3 4M8 11v4m8-4v4m-7 3h6"/></svg><span>B站</span></a><a href="https://github.com/alexjiang233" target="_blank" rel="noopener noreferrer" aria-label="打开GitHub主页"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21v-4c-4 1-4-2-5-2m11 6v-4c0-1-.3-1.7-1-2 3-.4 5-1.6 5-5 0-1-.4-2-1-2.7.2-.8.2-2-.3-2.8-1.6 0-3 1-3 1a12 12 0 0 0-5.4 0s-1.4-1-3-1C5.8 5.3 5.8 6.5 6 7.3 5.4 8 5 9 5 10c0 3.4 2 4.6 5 5-.7.3-1 1-1 2"/></svg><span>GitHub</span></a><button type="button" data-copy="撞上树桩的猪-杂谈随笔" data-copy-label="公众号名称" aria-label="复制公众号名称：撞上树桩的猪-杂谈随笔" title="复制公众号名称"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 15c-1 .6-2.3 1-3.7 1L5 18l.8-3.5C3.5 13.2 2 11.4 2 9c0-3.3 3.6-6 8-6s8 2.7 8 6"/><path d="M22 14c0 2-1 3.5-2.7 4.4L20 21l-3.5-1.3H16c-3.3 0-6-2.5-6-5.7s2.7-5 6-5 6 2.2 6 5Z"/><path d="M7 8h.01M12 8h.01M14 13h.01M18 13h.01"/></svg><span>公众号</span></button><button type="button" data-copy="2906725610@qq.com" data-copy-label="邮箱地址" aria-label="复制邮箱地址：2906725610@qq.com" title="复制邮箱地址"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><path d="m3 6 9 7 9-7"/></svg><span>反馈 / 加入我们</span></button></div><p class="contact-address">公众号：撞上树桩的猪-杂谈随笔 <span>·</span> 邮箱：<button class="address-copy" type="button" data-copy="2906725610@qq.com" data-copy-label="邮箱地址" aria-label="复制邮箱 2906725610@qq.com">2906725610@qq.com</button></p><p id="copy-status" class="copy-status" role="status" aria-live="polite"></p></section><div class="about-actions"><a class="home-button" href="#discover">开始查活动 <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></a><a class="quiet-link" href="https://github.com/alexjiang233/cdu-activity-calendar" target="_blank" rel="noopener noreferrer">项目仓库 <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 19 19 5M5 5h14v14"/></svg></a></div></section>
+<section id="guides-page" class="life-page" aria-labelledby="guides-heading" hidden>
+ <header class="editorial-heading guide-heading">
+  <div class="editorial-heading-copy">
+   <p class="editorial-kicker">CDU / GUIDE</p>
+   <h1 id="guides-heading">校园指南</h1>
+   <p class="editorial-deck">上网、跑步、进社团。把第一次遇到的问题，拆成今天就能照着走的几步。</p>
+  </div>
+  <div class="page-art art-guide" aria-hidden="true">
+   <i class="art-orbit orbit-one"></i><i class="art-orbit orbit-two"></i>
+   <span class="art-backword">HOW</span>
+   <div class="guide-art-card card-net"><small>01 / 上网</small><b>连上</b></div>
+   <div class="guide-art-card card-run"><small>02 / 运动</small><b>跑起来</b></div>
+   <div class="guide-art-card card-club"><small>03 / 社团</small><b>加入</b></div>
+   <span class="art-hand">照着做</span><i class="art-dot"></i>
+  </div>
+ </header>
+ <nav class="life-switch" aria-label="校园指南栏目"><a href="#guides" data-life-tab="guides">操作指南</a><a href="#services" data-life-tab="services">校园查询</a></nav>
+ <div id="guide-index">
+  <h2 class="life-subhead">从第一步开始</h2>
+  <p class="life-sublead">连上网，跑起来，加入喜欢的社团。每条都写明入口、顺序和卡住时先查什么。</p>
+  <div class="life-toolbar"><div id="guide-filters" class="life-chips" role="group" aria-label="指南类别"></div><label class="life-search"><span class="sr-only">搜索校园指南</span><input id="guide-search" type="search" placeholder="想解决什么问题？" autocomplete="off"><span aria-hidden="true">↗</span></label></div>
+  <p id="guide-count" class="life-count" role="status" aria-live="polite"></p><div id="guide-grid" class="guide-grid"></div>
+  <div class="life-note"><span aria-hidden="true">↳</span><p>先把手边的资料变成好用的步骤。教程来自已收集的操作说明；账号规则、跑步要求与系统界面，请结合当前学校通知使用。</p></div>
+ </div>
+ <article id="guide-article" hidden></article>
+</section>
+<section id="services-page" class="life-subpage" aria-labelledby="services-heading" hidden>
+ <h2 id="services-heading" class="life-subhead">需要的时候，找得到</h2>
+ <p class="life-sublead">常用电话、官方入口。先找到负责的人，再少走一点弯路。以下号码与入口来自公开来源，未做电话接通测试。</p>
+ <div class="life-toolbar"><div id="service-filters" class="life-chips" role="group" aria-label="查询类别"></div><label class="life-search"><span class="sr-only">搜索校园服务</span><input id="service-search" type="search" placeholder="搜索网络、邮箱、图书馆…" autocomplete="off"><span aria-hidden="true">↗</span></label></div>
+ <p id="service-count" class="life-count" role="status" aria-live="polite"></p><div id="service-grid" class="service-grid"></div>
+ <div class="life-next"><h2>校园很大，慢慢补齐。</h2><p>下一步收集食堂、商店与楼栋设施的实地信息。<br>想补充一处位置或纠正一条信息？</p><a href="mailto:2906725610@qq.com">告诉我们 <span aria-hidden="true">↗</span></a></div>
+ <p id="life-copy-status" class="sr-only" role="status" aria-live="polite"></p>
+</section>
+
+</main><footer class="footer"><div class="shell"><span>特别提醒：本网站不对消息真实性和准确性负责，请仔细核查，这是大学生应有的能力和素养。</span><span id="checked-date">数据库版本：2026.10.20</span></div></footer>
+
+
+
+
+</body></html>

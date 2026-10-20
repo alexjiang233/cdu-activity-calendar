@@ -1,0 +1,7 @@
+Django==5.2.18
+djangorestframework==3.16.1
+# 生产数据库
+psycopg[binary]==3.2.*
+# 生产静态文件与 WSGI
+whitenoise==6.8.*
+gunicorn==23.*; sys_platform != "win32"

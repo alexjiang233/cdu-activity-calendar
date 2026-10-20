@@ -1,0 +1,4 @@
+{% extends 'workbench/base.html' %}{% block content %}
+<div class="page-heading"><div><p class="eyebrow">KEEP EVERYTHING CONNECTED</p><h1>设置与维护</h1><p>日常编辑留在内容页，关联资料和站点设置放在这里。</p></div><span class="heading-decoration">✳</span></div>
+{% for title,items in groups %}<section class="settings-group"><div class="section-heading"><h2>{{ title }}</h2></div><div class="settings-grid">{% for item in items %}<a class="surface settings-card" href="{{ item.url }}"><span>{{ item.title }} <span>↗</span></span><strong>{{ item.count }}<small>条记录</small></strong><p>{% if item.readonly %}查看保留的记录与内容{% else %}查找、添加与修改{% endif %}</p></a>{% endfor %}</div></section>{% endfor %}
+{% endblock %}

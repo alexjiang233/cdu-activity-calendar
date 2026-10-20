@@ -1,0 +1,35 @@
+# 生产同源路由：静态页面与资源由 Caddy 直接给，/api 与 /admin 进 Django。
+# 用法：caddy run --config deploy/Caddyfile --envfile deploy/.env
+campus.example.edu.cn {
+	encode zstd gzip
+
+	# 静态文件由 Django（WhiteNoise）自己给，这里只是转发；
+	# /assets 是前端构建产物，直接由 Caddy 发送，不再经过应用。
+	handle /api/* {
+		reverse_proxy 127.0.0.1:8791
+	}
+	handle /admin/* {
+		reverse_proxy 127.0.0.1:8791
+	}
+	handle /manage/* {
+		reverse_proxy 127.0.0.1:8791
+	}
+	handle /static/* {
+		reverse_proxy 127.0.0.1:8791
+	}
+	handle /assets/* {
+		root * /srv/campus/frontend/dist
+		file_server
+	}
+	handle {
+		root * /srv/campus/frontend/dist
+		try_files {path} /index.html
+		file_server
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy same-origin
+	}
+}

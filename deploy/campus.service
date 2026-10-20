@@ -1,0 +1,18 @@
+# systemd 单元示例：/etc/systemd/system/campus.service
+[Unit]
+Description=Campus catalog Django app
+After=network.target postgresql.service
+
+[Service]
+User=campus
+WorkingDirectory=/srv/campus/backend
+EnvironmentFile=/srv/campus/deploy/.env
+ExecStart=/srv/campus/.venv/bin/gunicorn config.wsgi:application \
+  --bind 127.0.0.1:8791 --workers 3 --timeout 60
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
