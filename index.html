@@ -706,7 +706,7 @@ window.CduProjection = (function () {
     },
   };
   // 院级初赛/预赛：不进精选，保留在全部活动并标注院级。
-  var OUT_OF_FEATURED = ['activity-4b6bd9d295d4', 'activity-941fbf19f639'];
+  var OUT_OF_FEATURED = ['activity-4b6bd9d295d4', 'activity-941fbf19f639', 'series-770004e0fa68'];
   var outOfFeatured = new Set(OUT_OF_FEATURED);
 
   function apply(catalog) {
@@ -725,9 +725,22 @@ window.CduProjection = (function () {
     return catalog;
   }
 
+  // 标题点名学院、又没有校级及以上级别依据的赛事/创作/运动/生涯类活动，属于院级赛事。
+  var COMPETITION = { technology: 1, creative: 1, sports: 1, speech: 1, career: 1 };
+  function collegeOutOfFeatured(entry) {
+    if (outOfFeatured.has(entry.id)) return true;
+    if (!/[\u4e00-\u9fff]{2,10}学院/.test(entry.title || '')) return false;
+    if (!COMPETITION[entry.category]) return false;
+    var levels = new Set();
+    (entry.versions || []).forEach(function (v) {
+      (v.levels || []).forEach(function (level) { levels.add(level); });
+    });
+    return !['school', 'campus', 'national', 'province', 'international'].some(function (level) { return levels.has(level); });
+  }
+
   return {
     apply: apply,
-    collegeOutOfFeatured: function (entry) { return outOfFeatured.has(entry.id); },
+    collegeOutOfFeatured: collegeOutOfFeatured,
     hidden: Object.keys(MERGED_INTO),
     outOfFeatured: OUT_OF_FEATURED.slice(),
   };
@@ -1405,7 +1418,7 @@ window.CduProjection = (function () {
   const shownLevels=(version.levels||[]).filter(level=>level!=='unknown');
   for(const level of shownLevels){const b=el('button',catalog.levels[level],'scope-tag');b.type='button';b.addEventListener('click',()=>select('level',level));category.append(b)}
   if(!shownLevels.length&&entry.id==='activity-4b6bd9d295d4')category.append(el('span','院级','scope-tag scope-tag-inferred'));
-  else if(!shownLevels.length&&(version.colleges||[]).some(c=>c&&c!=='unknown'))category.append(el('span','院级','scope-tag scope-tag-inferred'))
+  else if(!shownLevels.length&&/[一-鿿]{2,10}学院/.test(displayTitle)&&(version.colleges||[]).some(c=>c&&c!=='unknown'))category.append(el('span','院级','scope-tag scope-tag-inferred'))
   top.append(category,el('span',status.label,'phase '+status.tone));const heading=el('h3'),titleButton=el('button',displayTitle,'entry-title-button');titleButton.type='button';titleButton.setAttribute('aria-expanded','false');titleButton.setAttribute('aria-label',displayTitle+'：展开详情');heading.append(titleButton);a.append(top,heading);
   const meta=el('div',undefined,'entry-meta');if(version.year)addTag(meta,version.year+' 年','year',String(version.year));const scope=scopeLabel(version,entry);if(scope.label&&!scope.redundant)meta.append(el('span',scope.label,'proof-note'));
   const detailGroups=mergedProfile(version);
