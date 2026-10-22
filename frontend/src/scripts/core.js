@@ -1,7 +1,13 @@
 (function(root){
  'use strict';
  function chinaNow(date=new Date()){return new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).format(date).replace(' ','T')}
- function endTime(raw){if(!raw)return null;let value=raw.includes('T')?raw:raw+'T23:59:59';if(value.includes('T24:')){const day=value.slice(0,10);value=new Date(Date.parse(day+'T00:00:00Z')+86400000).toISOString().slice(0,10)+'T00:'+value.split('T24:')[1]}return value.length===16?value+':00':value}
+ function endTime(raw){
+  if(!raw)return null;let value=String(raw);
+  if(value.includes('T24:')){const day=value.slice(0,10);value=new Date(Date.parse(day+'T00:00:00Z')+86400000).toISOString().slice(0,10)+'T00:'+value.split('T24:')[1]}
+  /* 接口的截止时间是带时区的 UTC；先换算成北京时间墙钟，才能和 chinaNow() 按字符串比较。 */
+  if(/(?:Z|[+-]\d{2}:?\d{2})$/.test(value)){const parsed=new Date(value);if(Number.isFinite(parsed.getTime()))return new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).format(parsed).replace(' ','T')}
+  if(!value.includes('T'))value+='T23:59:59';return value.length===16?value+':00':value
+ }
  function phase(version,kind,now=chinaNow()){
   if(kind==='reference')return {id:'reference',label:'参考资料',tone:'muted'};
   if(version.conflict)return {id:'unknown',label:'版本有差异',tone:'warning'};
@@ -14,7 +20,7 @@
   if(start&&start>day)return {id:'upcoming',label:'活动日期未到',tone:'muted'};
   if(start&&start===day)return {id:'scheduled',label:'通知所列活动日',tone:'active'};
   if(start&&start<day)return {id:'past',label:'所列起始日已过',tone:'muted'};
-  return {id:'unknown',label:version.year?version.year+'年公告':'历史公告',tone:'muted'};
+  return {id:'unknown',label:version.year?version.year+' 年公告':'历史公告',tone:'muted'};
  }
  function timingRange(version,basis='event'){
   if(version.conflict)return null;

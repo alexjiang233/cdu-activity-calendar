@@ -231,7 +231,7 @@ with others.
 
 The OFL allows the licensed fonts to be used, studied, modified and
 redistributed freely as long as they are not sold by themselves. The
-fonts, including any derivative works, can be bundled, embedded,
+fonts, including any derivative works, can be bundled, embedded, 
 redistributed and/or sold with any software provided that any reserved
 names are not used by derivative works. The fonts and derivatives,
 however, cannot be released under any other type of license. The
@@ -334,7 +334,7 @@ with others.
 
 The OFL allows the licensed fonts to be used, studied, modified and
 redistributed freely as long as they are not sold by themselves. The
-fonts, including any derivative works, can be bundled, embedded,
+fonts, including any derivative works, can be bundled, embedded, 
 redistributed and/or sold with any software provided that any reserved
 names are not used by derivative works. The fonts and derivatives,
 however, cannot be released under any other type of license. The
@@ -477,6 +477,22 @@ body.home-paused #landing *,body.home-paused #landing *::before,body.home-paused
 @media(max-width:700px){.global-nav{justify-content:flex-start;overflow-x:auto;gap:24px;width:100%;scrollbar-width:none}.global-nav::-webkit-scrollbar{display:none}.global-nav a{flex:none;font-size:14px}.life-hero{grid-template-columns:1fr;padding:35px 0;gap:20px}.life-hero h1{font-size:44px}.life-lead{font-size:16px}.life-art,.service-art{display:none}.life-kicker{margin-bottom:18px}.life-toolbar{align-items:stretch;flex-direction:column;gap:14px;padding-top:24px}.life-search{max-width:none;min-width:0;flex:auto}.guide-grid,.service-grid{grid-template-columns:1fr}.guide-card{display:grid;grid-template-columns:95px minmax(0,1fr)}.guide-card-art{height:100%;min-height:200px}.guide-card-art svg{width:48px;height:48px}.guide-no{font-size:63px;right:8px;bottom:8px}.guide-card-body{padding:20px}.guide-card h2{font-size:22px;margin:12px 0 8px}.guide-card p{margin-bottom:16px;font-size:14px}.guide-card-meta{font-size:11px}.guide-detail-layout{display:block}.guide-toc{position:static;margin-bottom:25px;padding-bottom:15px;display:flex;gap:8px;flex-wrap:wrap}.guide-toc h2{width:100%;margin-bottom:3px}.guide-toc button{width:auto;border:1px solid #dfc4ba;border-radius:30px;padding:7px 12px;font-size:12px}.guide-detail-header{padding:24px 0 30px}.guide-detail-header h1{font-size:35px}.guide-context{padding:18px}.guide-step{padding:28px 0}.guide-step h2{font-size:23px}.guide-step li{font-size:15px}.service-card{padding:23px}.service-card h2{font-size:22px}.service-phone{font-size:31px}.life-next{padding:28px 23px}.life-next h2{font-size:25px}.life-next:after{right:-15px;top:0}.home-life .shell{grid-template-columns:1fr;gap:0}.home-life h2{font-size:26px;margin-bottom:15px}.home-life a{font-size:21px}.life-note{margin-top:28px}}
 @media(prefers-reduced-motion:reduce){.life-art span,.service-art>span,.guide-card,.service-card{animation:none!important}.guide-card,.guide-card-art svg,.guide-toc button,.home-life a{transition:none!important}.guide-card:hover{transform:none}}
 
+/* 电话黄页：名称与号码优先，减少卡片高度和说明文字。 */
+.service-grid{display:block}
+.service-group{margin:16px 0 30px}
+.service-group>h3{font-family:var(--face-guide);font-size:19px;line-height:1.4;color:#6b1723;margin:0 0 10px;padding:0 0 9px;border-bottom:1px solid #dfc5bf}
+.service-group-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 26px}
+.service-row{min-width:0;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 2px;border-bottom:1px solid #eadbd4}
+.service-row h4{font-size:14px;line-height:1.5;font-weight:600;margin:0;color:#58323a}
+.service-row-numbers{display:grid;gap:3px;justify-items:end;flex:none}
+.service-phone-row{gap:7px;flex-wrap:nowrap}
+.service-phone-row .service-phone{font:600 14px/1.35 Manrope,"Microsoft YaHei",sans-serif;letter-spacing:0;color:#8d2430;text-decoration:none;white-space:nowrap}
+.service-phone-row .service-phone:hover{text-decoration:underline}
+.service-copy-phone{border:0;background:transparent;color:#987277;padding:2px 4px;font-size:11px;line-height:1.4;cursor:pointer}
+.service-copy-phone:hover{color:#8d2430;text-decoration:underline}
+.service-list-note{margin:20px 0 0;color:#9a7979;font-size:11px;line-height:1.7}
+@media(max-width:700px){.service-group-list{grid-template-columns:1fr}.service-row{padding:9px 0}.service-row h4{font-size:13px}.service-phone-row .service-phone{font-size:13px}.service-copy-phone{font-size:10px;padding-inline:3px}}
+
 /* Shared page system: keep discovery, calendar, about and guides in one voice. */
 :root{--ink:#4a1721;--muted:#805e60;--paper:#fbf6f1;--surface:#fffaf5;--green:#8d2430;--line:#e4d4cb;--wash:#f4e5e2;--display-face:'CDU Editorial','Noto Serif SC','Source Han Serif SC','Songti SC',serif}
 body{font-family:"Microsoft YaHei","PingFang SC","Noto Sans CJK SC",sans-serif;color:var(--ink)}
@@ -507,6 +523,27 @@ body{font-family:"Microsoft YaHei","PingFang SC","Noto Sans CJK SC",sans-serif;c
 .life-switch a[aria-current=page]{color:#8d2430}
 .life-switch a[aria-current=page]:after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:3px;background:#a72c37;border-radius:3px 3px 0 0}
 .life-subpage{padding:0 0 24px}
+/* 阅读文章时直接进入正文，栏目列表保留完整装饰页头。 */
+#guides-page[data-guide-view=article]{padding-top:24px}
+#guides-page[data-guide-view=article]>.guide-heading{display:none}
+#guides-page[data-guide-view=article] .life-back{margin-top:4px}
+#guides-page[data-guide-view=article] .guide-detail-header{padding-block:24px 30px}
+#guides-page[data-guide-view=article] .guide-detail-header .life-kicker{margin-bottom:12px}
+#guides-page[data-guide-view=article] .guide-detail-header h1{margin-bottom:16px}
+.guide-loading{min-height:200px;padding:32px 0;color:var(--muted)}
+.guide-loading h1{font-family:var(--display-face);font-size:clamp(28px,4vw,42px);color:var(--ink);margin:0 0 14px}
+.guide-loading p{font-size:16px;line-height:1.8}
+@media(max-width:600px){
+ .query-page .query-heading{grid-template-columns:minmax(0,1fr);min-height:0;padding-block:22px 26px}
+ .query-heading>.page-art{display:none}
+ #guides-page[data-guide-view=article]{padding-top:18px}
+ #guides-page[data-guide-view=article] .guide-detail-header{padding-block:12px 20px}
+ #guides-page[data-guide-view=article] .guide-detail-header .life-kicker{display:none}
+ #guides-page[data-guide-view=article] .guide-detail-header .life-lead{font-size:16px;line-height:1.75}
+ #guides-page[data-guide-view=article] .guide-toc{margin-bottom:12px;padding-bottom:8px}
+ #guides-page[data-guide-view=article] .guide-context{padding:14px 18px}
+ #guides-page[data-guide-view=article] .guide-steps>.guide-step:first-of-type{padding-top:24px}
+}
 @media(max-width:700px){.query-page,.calendar-page,.about-page,.life-page{padding-top:32px}.query-page .intro{padding-bottom:18px;margin-bottom:18px}.query-heading h1,.calendar-heading h1,.about-page>h1{font-size:38px}.calendar-heading{padding-bottom:20px;margin-bottom:22px}.calendar-heading p{font-size:15px}.about-page>h1{padding-bottom:20px;margin-bottom:18px}.about-sections{grid-template-columns:1fr;column-gap:0}.about-lead{font-size:16px}.home-life .shell{grid-template-columns:1fr}.home-life h2{margin-bottom:12px}.life-switch{gap:24px}.life-switch a{font-size:15px;min-height:50px}}
 
 /* Editorial page heroes, using the site's embedded type and simple animated SVG-like shapes. */
@@ -594,6 +631,12 @@ html[data-input-method=keyboard] .global-nav a[aria-current=page]::after{transfo
 .life-page .life-switch a[aria-current=page]{border-bottom-color:#a72c37}
 .life-page .life-switch a[aria-current=page]:after{content:none}
 .life-page .life-switch a:hover{color:#8d2430}
+.service-phone-list{display:grid;gap:7px;margin:10px 0 4px}
+.service-phone-row{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.service-phone-row .service-phone{font:700 21px/1.35 Manrope,"Microsoft YaHei",sans-serif;letter-spacing:.01em}
+.service-copy-phone{border:1px solid #e4cfc8;border-radius:999px;background:#fffaf5;color:#7f3540;padding:5px 12px;font-size:12px;cursor:pointer}
+.service-copy-phone:hover{background:#6b1723;color:#fff5e8;border-color:#6b1723}
+@media(max-width:700px){.service-phone-row .service-phone{font-size:19px}.service-copy-phone{min-height:36px}}
 @media(max-width:700px){.life-page .life-switch{margin-top:18px;overflow:auto}}
 
 /* 活动探索：结果区标题只做小标签，不再造第二个大标题。 */
@@ -696,3 +739,10 @@ html[data-input-method=keyboard] .global-nav a[aria-current=page]::after{transfo
  .guide-heading{grid-template-columns:minmax(0,1fr)!important}
  .guide-heading .page-art{display:none}
 }
+
+/* Keep phone entries compact after legacy page styles. */
+.service-grid .service-phone-row .service-phone{font:500 14px/1.3 Manrope,"Microsoft YaHei",sans-serif;letter-spacing:0}
+.service-grid .service-row{padding-block:8px}
+.service-grid .service-copy-phone{font-size:10px;padding:2px 4px}
+@media(max-width:700px){.service-grid .service-phone-row .service-phone{font-size:13px}.service-grid .service-copy-phone{min-height:0}}
+

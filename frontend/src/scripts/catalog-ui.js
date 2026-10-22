@@ -196,10 +196,13 @@
  filters.open=false;
  for(const [id,label] of Object.entries(catalog.colleges)){if(id!=='unknown'){const pref=el('option',label);pref.value=id;document.getElementById('my-college').append(pref)}const o=el('option',label);o.value=id;document.getElementById('college').append(o)}
  for(const [id,label] of Object.entries(catalog.levels)){const o=el('option',label);o.value=id;document.getElementById('level').append(o)}
- const yearControl=document.getElementById('year');yearControl.replaceChildren();for(const [value,label] of [['','全部年份'],...[...new Set(catalog.entries.flatMap(e=>e.versions.map(v=>v.year)).filter(Number.isInteger))].sort((a,b)=>b-a).map(y=>[String(y),y+' 年']),['unknown','年份未明确']]){const o=el('option',label);o.value=value;yearControl.append(o)}
+ /* 年份选项不能等首个列表响应再建：启动时 catalog.entries 为空，会把 ?year=2023 等深链直接判为无效。 */
+ function knownYears(){const years=new Set((catalog.entries||[]).flatMap(e=>(e.versions||[]).map(v=>v.year)).filter(Number.isInteger));const range=(catalog.coverage||{}).range||[];const start=Number(String(range[0]||'').slice(0,4)),end=Number(String(range[1]||'').slice(0,4));if(Number.isInteger(start)&&Number.isInteger(end)&&start>2000&&end>=start)for(let y=start;y<=end;y++)years.add(y);return [...years].sort((a,b)=>b-a)}
+ const knownYearList=knownYears();
+ const yearControl=document.getElementById('year');yearControl.replaceChildren();for(const [value,label] of [['','全部年份'],...knownYearList.map(y=>[String(y),y+' 年']),['unknown','年份未明确']]){const o=el('option',label);o.value=value;yearControl.append(o)}
  const filterKeys=['q','college','level','year','category','phase','month','month_basis','interest'];
  function choice(parent,text,key,value){const b=el('button',text);b.type='button';b.dataset[key]=value;b.setAttribute('aria-pressed','false');b.addEventListener('click',()=>{if(key==='category'&&value){const values=new Set(state.category.split(',').filter(Boolean));if(values.has(value))values.delete(value);else values.add(value);select(key,[...values].join(','))}else select(key,value)});parent.append(b)}
- const yearTabs=el('div',undefined,'year-shortcuts');yearTabs.setAttribute('role','group');yearTabs.setAttribute('aria-label','按公告年份筛选');choice(yearTabs,'全部年份','year','');for(const y of [...new Set(catalog.entries.flatMap(e=>e.versions.map(v=>v.year)).filter(Number.isInteger))].sort((a,b)=>b-a))choice(yearTabs,String(y),'year',String(y));document.querySelector('#filters .filter-body').append(yearTabs);
+ const yearTabs=el('div',undefined,'year-shortcuts');yearTabs.setAttribute('role','group');yearTabs.setAttribute('aria-label','按公告年份筛选');choice(yearTabs,'全部年份','year','');for(const y of knownYearList)choice(yearTabs,String(y),'year',String(y));document.querySelector('#filters .filter-body').append(yearTabs);
  const months=document.getElementById('month-tabs');choice(months,'全年','month','');for(let i=1;i<=12;i++)choice(months,i+'月','month',String(i));choice(months,'日期待补','month','unknown');
  const types=document.getElementById('category-tabs');choice(types,'全部类型','category','');for(const id of ['sports','creative','technology','speech','volunteering','practice','recruitment'])choice(types,categories[id],'category',id);const extra=el('details',undefined,'extra-types');extra.append(el('summary','更多类型'));const extraBody=el('div');for(const id of ['learning','exchange','career'])choice(extraBody,categories[id],'category',id);extra.append(extraBody);types.append(extra);
 
@@ -289,7 +292,7 @@
   newNode.querySelector('select')?.focus({preventScroll:true});
  }
  window.ActivityDetails={render:activityProfile};
- const editionSelection=new Map();const yearSelection=new Map();const linkedEdition=new URL(location.href).searchParams.get('edition');if(linkedEdition)for(const entry of catalog.entries)if(entry.versions.some(v=>v.source_url===linkedEdition))editionSelection.set(entry.id,linkedEdition);
+ const editionSelection=new Map();const yearSelection=new Map();const linkedEdition=new URL(location.href).searchParams.get('edition');let linkedEditionApplied=false;
  function conciseAudience(value){
   const text=String(value||'').replace(/\s+/g,' ').replace(/^(?:参与|申请|申报|活动|面向|招募)?对象\s*[:：]\s*/,'').trim();
   if(!text)return '';
@@ -382,7 +385,7 @@
   else if(show('editorial_notes')&&entry.editorial_note)a.append(el('p',entry.editorial_note,'entry-takeaway compact-clause'));
   else if(keyFact&&!/^(?:参与|申请|申报|活动|面向)?对象/.test(keyFact)&&!(audience&&normKey(audience).includes(normKey(keyFact).slice(0,10))))a.append(el('p',keyFact,'entry-takeaway compact-clause'));
     if(show('card_dates')){const timing=cardTiming(version,groupTexts);if(timing.deadline)a.append(el('p','报名截止 · '+timing.deadline,'compact-date'));if(timing.event)a.append(el('p','活动时间 · '+timing.event,'compact-date'));if(!timing.deadline&&!timing.event)a.append(el('p',(version.year?version.year+' 年':'历史')+'公告 · 未提取到日期','compact-date'))}
-  const d=el('details',undefined,'entry-details');d.append(el('summary','查看详情'+(entry.versions.length>1?' · '+entry.versions.length+' 个公告版本':'')));titleButton.addEventListener('click',()=>{d.open=!d.open});d.addEventListener('toggle',()=>{titleButton.setAttribute('aria-expanded',String(d.open));titleButton.setAttribute('aria-label',displayTitle+(d.open?'：收起详情':'：展开详情'));a.classList.toggle('details-open',d.open)});const body=el('div',undefined,'detail-content');
+  const d=el('details',undefined,'entry-details');d.append(el('summary','查看详情'+(entry.versions.length>1?' · '+entry.versions.length+' 个公告版本':'')));titleButton.addEventListener('click',()=>{d.open=!d.open});d.addEventListener('toggle',()=>{titleButton.setAttribute('aria-expanded',String(d.open));titleButton.setAttribute('aria-label',displayTitle+(d.open?'：收起详情':'：展开详情'));a.classList.toggle('details-open',d.open);if(d.open)hydrate(entry,version,a)});const body=el('div',undefined,'detail-content');
   const quickFacts=[];if(audience&&show('audience'))quickFacts.push(['参与对象',audience]);if(show('card_dates')&&version.deadline)quickFacts.push(['原文所列截止',date(version.deadline)]);const materials=groupTexts('materials');if(materials.length)quickFacts.push(['需交材料',materials.join('；')]);
   if(quickFacts.length){const quick=el('dl',undefined,'detail-quickfacts');for(const [label,value] of quickFacts){quick.append(el('dt',label),el('dd',value))}body.append(quick)}
   body.append(meta);
@@ -446,6 +449,8 @@
    serverRows=data.results||[];serverCount=data.count||0;
    serverPages=data.total_pages||1;serverPage=data.page||1;
    catalog.entries=serverRows;
+   /* edition 深链要等首批列表到达才知道落在哪张卡；只在首次命中时应用，后续用户切换不再覆盖。 */
+   if(linkedEdition&&!linkedEditionApplied){let matched=false;for(const entry of serverRows){if(entry.versions.some(v=>v.source_url===linkedEdition)){editionSelection.set(entry.id,linkedEdition);matched=true}}if(matched)linkedEditionApplied=true}
    return data;
   }catch(error){
    if(seq!==renderSeq)return null;

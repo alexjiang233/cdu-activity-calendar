@@ -5,6 +5,11 @@
  document.addEventListener('keydown',()=>{document.documentElement.dataset.inputMethod='keyboard'},true);
  document.addEventListener('pointerdown',()=>{document.documentElement.dataset.inputMethod='pointer'},true);
  const home=window.CduData.home||{hero:[],picks:[],categories:{},counts:{}};
+ const publishedAt=new Date(window.CduData.meta?.published_at||'');
+ if(Number.isFinite(publishedAt.getTime())){
+  const date=new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(publishedAt).replaceAll('/','.');
+  const version=document.getElementById('checked-date');if(version)version.textContent='数据库版本：'+date;
+ }
  const featuredSeed=(home.hero||[]).concat(home.picks||[]).filter((e,i,a)=>e&&a.findIndex(x=>x&&x.id===e.id)===i);
  const byId=new Map(featuredSeed.map(e=>[e.id,e]));
  const make=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n};

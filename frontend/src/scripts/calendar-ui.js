@@ -8,7 +8,9 @@
  const make=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n};
  const categories=new Map(catalog.entries.map(e=>[e.category,e.category_label]));
  const years=events.flatMap(e=>[Number(e.start.slice(0,4)),Number(e.end.slice(0,4))]);
- const minYear=Math.min(Number(today.slice(0,4)),...years),maxYear=Math.max(Number(today.slice(0,4))+1,...years);
+ /* 覆盖范围来自词表，不能等 events 加载后才决定可选年份，否则启动时只能选当前年和下一年。 */
+ const coverageYears=((catalog.coverage||{}).range||[]).map(v=>Number(String(v||'').slice(0,4))).filter(y=>Number.isInteger(y)&&y>2000);
+ const minYear=Math.min(Number(today.slice(0,4)),...years,...coverageYears),maxYear=Math.max(Number(today.slice(0,4))+1,...years,...coverageYears);
  let view='seasonal',agendaExpanded=false;
  let state={month:currentMonth,selected:'',kind:'all',category:'',college:'',featured:true},limit=view==='seasonal'?6:12;
  const monthLabel=m=>Number(m.slice(0,4))+'年 '+Number(m.slice(5))+'月';
