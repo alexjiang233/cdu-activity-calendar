@@ -195,7 +195,7 @@ def build_catalog_export() -> tuple[dict, dict]:
                 'levels': levels,
                 'seasonal_months': sorted(services.decode_months(notice.seasonal_months)),
                 'search': notice.search_text or '',
-                'facts_preview': [services._fact_payload(fact) for fact in list(notice.facts.all())[:12]],
+                'facts_preview': services.preview_facts(notice),
             }
             existing = notices.get(notice_id)
             if existing is not None:

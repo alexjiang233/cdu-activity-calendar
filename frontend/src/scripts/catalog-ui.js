@@ -148,6 +148,15 @@
  }
  function mergedProfile(version){
   const groups=new Map(),seen=new Set(),factKeys=[];
+  if(version.editorial_curated){
+   for(const section of version.content_profile?.sections||[]){
+    const kind=section.kind;if(!kindOrder.includes(kind))continue;
+    if(!groups.has(kind))groups.set(kind,{items:[]});
+    for(const item of section.items||[]){const text=String(item.text||'').trim();
+     const key=kind+'\n'+text;if(text&&!seen.has(key)){seen.add(key);groups.get(kind).items.push({text});}}
+   }
+   return groups;
+  }
   const ctx={lastLocation:'',lastSubject:''};
   const add=(kind,text,locator,sourceUrl)=>{
    if(!show(kind))return;
@@ -337,9 +346,10 @@
   try{
    const data=await window.CduApi.detail(entry.id,version.notice_id);
    const full=data.notice||{};
+   version.editorial_curated=Boolean(full.editorial_curated);
    if(full.content_profile)version.content_profile=full.content_profile;
    if(full.participation_facts)version.participation_facts=full.participation_facts;
-   if(full.audience)version.audience=full.audience;
+   if(Object.prototype.hasOwnProperty.call(full,'audience'))version.audience=full.audience;
    version._full=true;
    if(!node.isConnected)return;
    const next=card(entry);const box=next.querySelector('.entry-details');

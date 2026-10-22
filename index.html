@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#6b1723"><meta name="description" content="按学院、年份、类别和通知时间，发现成都大学校园活动与往届准备线索。"><title>CDU Activity Calendar · 校园活动索引</title>
- <meta name="cdu-static-revision" content="rev-static-20261022-d28442a047"><style>
+ <meta name="cdu-static-revision" content="rev-static-20261022-4f730e9377"><style>
 /* 启动与失败状态：数据未就绪时给出可见反馈，不把空白当成“没有内容” */
 #boot-status{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:24px;background:#6b1723;color:#fff1da;font:14px/1.5 system-ui,sans-serif;overflow:hidden}
 #boot-status[hidden]{display:none}
@@ -26,7 +26,7 @@ body.is-revealing>header,body.is-revealing>main,body.is-revealing>footer{animati
 @keyframes boot-reveal{to{opacity:0}}
 @keyframes content-reveal{from{opacity:0;translate:0 12px}to{opacity:1;translate:0 0}}
 @media(prefers-reduced-motion:reduce){.boot-ticket,.boot-line:after,body.is-revealing>header,body.is-revealing>main,body.is-revealing>footer{animation:none}#boot-status.is-leaving{animation:none;opacity:0}}
-</style><link rel="stylesheet" href="assets/app.css?v=rev-static-20261022-d28442a047"></head><body class="is-booting"><div id="boot-status" role="status" aria-live="polite"><div class="boot-brand">CDU / CAMPUS LIFE</div><div class="boot-scene" aria-hidden="true"><div class="boot-ticket"></div><div class="boot-ticket"></div><div class="boot-ticket"><svg viewBox="0 0 40 40"><rect x="5" y="8" width="30" height="28" rx="5"/><path d="M5 16h30M13 4v8M27 4v8M12 23h5M23 23h5M12 29h5"/></svg></div></div><p class="boot-title">校园，正在展开。</p><div class="boot-line" aria-hidden="true"></div><div class="boot-message">正在准备页面…</div></div><noscript><style>.is-booting{overflow:auto}.is-booting>header,.is-booting>main,.is-booting>footer,.is-booting>.skip{visibility:visible}#boot-status{display:none}</style><p>请启用 JavaScript 以查看校园活动和指南。</p></noscript>
+</style><link rel="stylesheet" href="assets/app.css?v=rev-static-20261022-4f730e9377"></head><body class="is-booting"><div id="boot-status" role="status" aria-live="polite"><div class="boot-brand">CDU / CAMPUS LIFE</div><div class="boot-scene" aria-hidden="true"><div class="boot-ticket"></div><div class="boot-ticket"></div><div class="boot-ticket"><svg viewBox="0 0 40 40"><rect x="5" y="8" width="30" height="28" rx="5"/><path d="M5 16h30M13 4v8M27 4v8M12 23h5M23 23h5M12 29h5"/></svg></div></div><p class="boot-title">校园，正在展开。</p><div class="boot-line" aria-hidden="true"></div><div class="boot-message">正在准备页面…</div></div><noscript><style>.is-booting{overflow:auto}.is-booting>header,.is-booting>main,.is-booting>footer,.is-booting>.skip{visibility:visible}#boot-status{display:none}</style><p>请启用 JavaScript 以查看校园活动和指南。</p></noscript>
 <a href="#results" class="skip">跳到活动结果</a>
 <header class="topbar"><div class="shell"><a class="brand" href="#home" aria-label="CDU Activity Calendar 首页"><svg viewBox="0 0 40 40" fill="none" stroke-width="1.6" aria-hidden="true"><rect x="5" y="8" width="30" height="28" rx="5"/><path d="M5 16h30M13 4v8M27 4v8M12 23h5M23 23h5M12 29h5"/></svg><span translate="no">CDU Activity Calendar<small>成都大学校园生活与活动</small></span></a><nav class="global-nav" aria-label="网站导航"><a href="#home" data-page="home">首页</a><a href="#discover" data-page="query">活动探索</a><a href="#calendar" data-page="calendar">活动日历</a><a href="#guides" data-page="guides">校园指南</a><a href="#about" data-page="about">关于</a></nav></div></header>
 <main class="shell"><section id="landing" aria-labelledby="home-title">
@@ -129,7 +129,7 @@ body.is-revealing>header,body.is-revealing>main,body.is-revealing>footer{animati
 
 
 
-<script src="assets/api.js?v=rev-static-20261022-d28442a047"></script>
+<script src="assets/api.js?v=rev-static-20261022-4f730e9377"></script>
 <script>
 (function(){
   var status=document.getElementById('boot-status');
@@ -148,7 +148,7 @@ body.is-revealing>header,body.is-revealing>main,body.is-revealing>footer{animati
   say('正在载入校园活动数据…');
   var slow=setTimeout(function(){say('网络有点慢，仍在加载…')},10000);
   Promise.resolve().then(function(){if(!window.CduApi)throw new Error('页面脚本未能下载');return window.CduApi.boot()}).then(function(){
-    return window.CduApi.loadScripts(["assets/core.js?v=rev-static-20261022-d28442a047", "assets/calendar-core.js?v=rev-static-20261022-d28442a047", "assets/page.js?v=rev-static-20261022-d28442a047", "assets/catalog-ui.js?v=rev-static-20261022-d28442a047", "assets/calendar-ui.js?v=rev-static-20261022-d28442a047", "assets/life.js?v=rev-static-20261022-d28442a047", "assets/explore.js?v=rev-static-20261022-d28442a047"]);
+    return window.CduApi.loadScripts(["assets/core.js?v=rev-static-20261022-4f730e9377", "assets/calendar-core.js?v=rev-static-20261022-4f730e9377", "assets/page.js?v=rev-static-20261022-4f730e9377", "assets/catalog-ui.js?v=rev-static-20261022-4f730e9377", "assets/calendar-ui.js?v=rev-static-20261022-4f730e9377", "assets/life.js?v=rev-static-20261022-4f730e9377", "assets/explore.js?v=rev-static-20261022-4f730e9377"]);
   }).then(function(){
     return window.CduInitialViewReady;
   }).then(function(){

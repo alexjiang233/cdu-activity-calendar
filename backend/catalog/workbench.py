@@ -22,6 +22,7 @@ from django.views.decorators.http import require_POST
 from django.views.decorators.cache import never_cache
 
 from . import audit, drafts, services
+from . import participation
 from .models import (Activity, CampusService, DraftChange, Guide, Notice, Revision,
                      SiteMeta, Taxonomy)
 
@@ -103,6 +104,9 @@ def listing(request, kind):
     query = model.objects.all()
     if kind == 'activity':
         query = query.select_related('category').annotate(notice_total=Count('notices', distinct=True))
+        refined=Notice.objects.filter(Q(activity_id=OuterRef('pk'))|Q(display_activity_id=OuterRef('pk')),
+            extras__curated_details__enabled=True)
+        query=query.annotate(has_refined=Exists(refined))
     pending = DraftChange.objects.filter(entity_kind=kind, entity_id=OuterRef('pk'), status='draft')
     query = query.annotate(has_draft=Exists(pending))
     if q:
@@ -112,6 +116,9 @@ def listing(request, kind):
         query = query.filter(visibility=state)
     if state == 'draft':
         query = query.filter(has_draft=True)
+    refinement=request.GET.get('refinement','')
+    if kind=='activity' and refinement in ('needs','some'):
+        query=query.filter(has_refined=refinement=='some')
     category = request.GET.get('category', '')
     if category and kind == 'activity':
         query = query.filter(category_id=category) if category.isdigit() else query.none()
@@ -120,8 +127,12 @@ def listing(request, kind):
     params = request.GET.copy(); params.pop('page', None)
     rows = [{'obj': obj, 'name': str(obj), 'edit_url': reverse('workbench:edit', args=[kind, obj.pk])}
             for obj in page]
+    if kind=='activity':
+        for row in rows:
+            row['basic_url']=row['edit_url']
+            row['edit_url']=reverse('workbench:participation',args=[row['obj'].pk])
     return render(request, 'workbench/list.html', shell(request, active=active, title=label,
-                  kind=kind, rows=rows, page=page, q=q, state=state, category=category,
+                  kind=kind, rows=rows, page=page, q=q, state=state, category=category, refinement=refinement,
                   categories=Taxonomy.objects.filter(kind='category'),
                   query_tail=params.urlencode(), can_change=request.user.has_perm(
                       f'catalog.change_{model._meta.model_name}'),
@@ -134,6 +145,8 @@ class CategoryChoice(forms.ModelChoiceField):
 
 
 class ContentForm(forms.ModelForm):
+    display_choice=forms.ChoiceField(label='放在哪里',required=False,choices=[
+        ('home','首页推荐＋精选活动'),('featured','精选活动'),('all','只放在全部活动'),('hidden','暂不展示（保留资料）')])
     class Meta:
         model = Activity
         fields = ('title', 'category', 'summary', 'tags', 'editorial_note',
@@ -153,6 +166,20 @@ class ContentForm(forms.ModelForm):
             self.initial['tags'] = '，'.join(value) if isinstance(value,list) else value
         self.fields['featured'].label = '允许推荐'
         self.fields['spotlight'].label = '设为精选'
+        for key in ('featured','spotlight','visibility'):
+            self.fields[key].widget=forms.HiddenInput()
+        state=self.initial
+        self.initial['display_choice']=('hidden' if state.get('visibility',self.instance.visibility)=='hidden' else
+            'home' if state.get('featured',self.instance.featured) and state.get('spotlight',self.instance.spotlight) else
+            'featured' if state.get('featured',self.instance.featured) else 'all')
+
+    def clean(self):
+        data=super().clean()
+        choice=data.get('display_choice')
+        if choice:
+            data.update(visibility='hidden' if choice=='hidden' else 'public',
+                featured=choice in ('home','featured'),spotlight=choice=='home')
+        return data
 
     def clean_tags(self):
         return [x.strip() for x in self.cleaned_data['tags'].replace('，', ',').replace('、', ',').split(',') if x.strip()][:20]
@@ -231,8 +258,24 @@ class NoticeForm(forms.ModelForm):
         for fact in (self.instance.facts.order_by('position','pk') if not self.instance._state.adding else []):
             key=f'fact_{fact.pk}'
             self.fields[key]=forms.CharField(label=fact.label or '分条内容',initial=fact.value,
-                                            widget=forms.Textarea(attrs={'rows':2}),max_length=16000)
+                                            widget=forms.Textarea(attrs={'rows':2}),max_length=16000,required=False)
             self.fact_rows.append((fact,key))
+        saved=(self.initial.get('extras') or self.instance.extras or {}).get('curated_details') or {}
+        seeds=saved.get('fields',{}) if 'fields' in saved else participation.seed_fields(self.instance)
+        self.fields['curated_enabled']=forms.BooleanField(label='使用下面的精简信息替代原始长正文',required=False,
+            initial=saved.get('enabled',True))
+        for key,label,_ in participation.FIELDS:
+            self.fields['curated_'+key]=forms.CharField(label=label,required=False,max_length=6000,
+                initial=seeds.get(key,''),widget=forms.Textarea(attrs={'rows':2,'placeholder':'没有就留空；每行写一条。'}))
+
+    def clean(self):
+        data=super().clean()
+        start,end=data.get('stage_start'),data.get('stage_end')
+        if start and end and end<start:self.add_error('stage_end','结束日期不能早于开始日期。')
+        if self.data.get('action')=='publish' and data.get('curated_enabled') and not (data.get('audience') or start or end or data.get('deadline')
+            or any(data.get('curated_'+key) for key,_,_ in participation.FIELDS)):
+            self.add_error('curated_enabled','请至少填写一项参与信息；暂时不展示的活动可在活动页设为隐藏。')
+        return data
 
 
 FORMS={'activity':ContentForm,'guide':GuideForm,'service':ServiceForm,'notice':NoticeForm}
@@ -244,7 +287,13 @@ def form_payload(form, kind, original):
         value=form.cleaned_data[key]
         payload[key]=value.pk if isinstance(value,Model) else audit._jsonable(value)
     if kind=='notice':
-        payload['facts']=[{**row,'value':form.cleaned_data[f'fact_{row["id"]}']} for row in original['facts']]
+        nested={r['id']:r for r in form.initial.get('facts',original['facts'])}
+        payload['facts']=[{**row,'value':form.cleaned_data[f'fact_{row["id"]}']
+            if f'fact_{row["id"]}' in form.data else nested.get(row['id'],row)['value']} for row in original['facts']]
+        if any(key.startswith('curated_') for key in form.data):
+            payload['extras']={**(form.initial.get('extras') or original.get('extras') or {}),
+                'curated_details':{'enabled':bool(form.cleaned_data.get('curated_enabled')),
+                    'fields':{key:form.cleaned_data['curated_'+key].strip() for key,_,_ in participation.FIELDS}}}
     if kind=='guide':
         payload['sections']=[{**s,'title':form.cleaned_data[f'section_{s["id"]}'],
             'position':form.cleaned_data[f'section_{s["id"]}_position'],
@@ -268,6 +317,9 @@ def edit(request, kind, pk):
     if kind=='activity':
         initial['tags']='，'.join(initial.get('tags') or [])
     form=FORMS[kind](request.POST or None,instance=obj,initial=initial)
+    if kind=='notice' and getattr(request,'participation_activity',None):
+        for key in ('activity','source'):
+            form.fields[key].widget=forms.HiddenInput();form.fields[key].disabled=True
     # ModelForms assign cleaned values to instance during validation; compare against a fresh row.
     token=signing.dumps({'id':pk,'kind':kind,'hash':audit.content_hash(original),
                          'draft':latest.pk if latest else None},salt='workbench-edit')
@@ -290,9 +342,11 @@ def edit(request, kind, pk):
                 action=request.POST.get('action','save')
                 if action=='publish':
                     drafts.publish(draft,actor=request.user)
-                    messages.success(request,'已发布，前台内容已经更新。')
+                    messages.success(request,'已更新本地预览。GitHub Pages 仍需同步发布后才会更新。')
                 else:
                     messages.success(request,'草稿已保存。公开页面保持原来的内容。')
+            if getattr(request,'participation_activity',None):
+                return redirect(reverse('workbench:participation',args=[request.participation_activity.pk])+'?'+urlencode({'notice':pk}))
             return redirect('workbench:edit',kind=kind,pk=pk)
         except (ValueError, signing.BadSignature) as exc:
             form.add_error(None,str(exc));status=409
@@ -308,6 +362,7 @@ def edit(request, kind, pk):
             form.initial[f'faq_answer_{faq["id"]}']=faq['answer']
     names=set(form.Meta.fields)
     fields=[form[key] for key in form.Meta.fields]
+    if kind=='activity':fields.insert(3,form['display_choice'])
     chapters=[{'title':form[name],'order':form[name+'_position'],'blocks':[form[key] for block,key in blocks]}
               for section,name,blocks in getattr(form,'chapters',[])]
     facts=[{'field':form[key],'quote':fact.quote,'locator':fact.locator} for fact,key in getattr(form,'fact_rows',[])]
@@ -317,6 +372,11 @@ def edit(request, kind, pk):
         notices=list(Notice.objects.filter(Q(activity=obj)|Q(display_activity=obj))
                      .select_related('source').order_by('-year','-published','position').distinct())
     else:notices=[]
+    notice_fields=[]
+    if kind=='notice':
+        notice_fields=[form[key] for key in ('stage_start','stage_end','curated_event_time','curated_location',
+            'deadline','deadline_kind','audience','curated_registration','curated_conditions','curated_materials',
+            'curated_benefits','curated_fees','curated_contact','curated_notes')]
     changes=Revision.objects.filter(changes__entity_kind=kind,changes__entity_id=pk).distinct()[:6]
     from .maintenance import linked_rows
     links=linked_rows('notice',obj) if kind=='notice' else []
@@ -327,8 +387,27 @@ def edit(request, kind, pk):
     return render(request,'workbench/edit.html',shell(request,active=active,title=str(obj),kind=kind,obj=obj,links=links,
         form=form,fields=fields,chapters=chapters,facts=facts,questions=questions,baseline=token,original=original,
         latest=latest,notices=notices,changes=changes,label=label,
-        editor_title=(obj.activity.title+' · '+str(obj.year or '年份未明')+' 年通知' if kind=='notice' else str(obj)),
+        notice_fields=notice_fields,curation=form['curated_enabled'] if kind=='notice' else None,
+        participation_activity=getattr(request,'participation_activity',None),
+        participation_notices=getattr(request,'participation_notices',[]),
+        editor_title=((getattr(request,'participation_activity',None) or obj.activity).title+' · '+str(obj.year or '年份未明')+' 年通知' if kind=='notice' else str(obj)),
         original_display={LABELS.get(k,k):v for k,v in original.items() if k in names}),status=status)
+
+
+@guard(kind='activity',change=True)
+def participation_editor(request,pk):
+    activity=get_object_or_404(Activity,pk=pk)
+    if not request.user.has_perm('catalog.change_notice'):raise PermissionDenied
+    notices=list(Notice.objects.filter(Q(activity=activity)|Q(display_activity=activity))
+        .select_related('source').order_by('-year','-published','position','pk').distinct())
+    if not notices:
+        return redirect(reverse('workbench:create',args=['notice'])+'?'+urlencode({'activity':pk}))
+    chosen=request.GET.get('notice') or notices[0].pk
+    selected=next((n for n in notices if n.pk==chosen),None)
+    if selected is None:raise Http404
+    request.participation_activity=activity
+    request.participation_notices=notices
+    return edit(request,kind='notice',pk=selected.pk)
 
 
 @guard()
@@ -343,6 +422,10 @@ def create(request,kind):
     if request.method=='POST' and form.is_valid():
         with transaction.atomic():
             saved=form.save(commit=False)
+            if kind=='notice' and any(key.startswith('curated_') for key in form.data):
+                saved.extras={**(saved.extras or {}),'curated_details':{
+                    'enabled':bool(form.cleaned_data.get('curated_enabled')),
+                    'fields':{key:form.cleaned_data['curated_'+key].strip() for key,_,_ in participation.FIELDS}}}
             if kind!='notice':saved.visibility='hidden'
             saved.save();form.save_m2m()
             if kind=='activity':
@@ -381,8 +464,8 @@ def bulk(request,kind):
     action=request.POST.get('action')
     if action=='extra':action=request.POST.get('extra_action')
     updates={'hide':{'visibility':'hidden'},'show':{'visibility':'public'}}
-    if kind=='activity':updates.update({'feature':{'featured':True},'unfeature':{'featured':False},
-                                       'spotlight':{'spotlight':True},'unspotlight':{'spotlight':False}})
+    if kind=='activity':updates.update({'feature':{'featured':True},'unfeature':{'featured':False,'spotlight':False},
+                                       'spotlight':{'spotlight':True,'featured':True},'unspotlight':{'spotlight':False}})
     if action not in updates:raise Http404
     ids=request.POST.getlist('selected')[:100]
     with transaction.atomic():
@@ -443,6 +526,7 @@ def revision(request,pk):
 
 
 urlpatterns=[path('',home,name='home'),path('version/',lambda request:JsonResponse({'app':'campus-workbench-2'}),name='version'),path('login/',Login.as_view(),name='login'),
+    path('activity/<str:pk>/participation/',participation_editor,name='participation'),
     path('logout/',LogoutView.as_view(next_page='/manage/login/'),name='logout'),
     path('history/',history,name='history'),path('history/<str:pk>/',revision,name='revision'),
     path('new/<str:kind>/',create,name='create'),

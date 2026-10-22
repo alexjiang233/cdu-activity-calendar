@@ -23,9 +23,11 @@
   setText('[data-preview-title]',title);setText('[data-preview-summary]',value('summary')||value('description')||value('audience')||'在这里补充一两句，帮助读者快速判断。');
   const category=form.elements.namedItem('category');if(category?.tagName==='SELECT')setText('[data-preview-category]',category.selectedOptions[0]?.textContent||'未分类');
   setText('[data-preview-extra]',value('editorial_note')||value('scope')||value('note')||value('caution')||'具体要求按条目和原始通知分别保留。');
-  const date=value('deadline')||value('published');if(date)setText('[data-preview-date]',(value('deadline')?'报名／提交截止 · ':'公告发布 · ')+date.replace('T',' '));
+  const date=value('deadline')||value('stage_start')||value('published');if(date)setText('[data-preview-date]',(value('deadline')?'报名／提交截止 · ':value('stage_start')?'活动开始 · ':'公告发布 · ')+date.replace('T',' '));
   const blocks=$('[data-preview-blocks]');blocks.replaceChildren();
-  const details=$$('textarea[name^=fact_],textarea[name^=block_]',form);if(details.length){const ul=document.createElement('ul');details.forEach(input=>{const li=document.createElement('li');li.textContent=input.value;ul.append(li);});blocks.append(ul);}
+  const curated=form.elements.namedItem('curated_enabled');
+  const details=curated?.checked?$$('textarea[name^=curated_]',form):$$('textarea[name^=fact_],textarea[name^=block_]',form);
+  if(details.length){const ul=document.createElement('ul');details.forEach(input=>{for(const text of input.value.split('\n').filter(t=>t.trim())){const li=document.createElement('li');li.textContent=text;ul.append(li);}});blocks.append(ul);}
   const phone=value('phone'),location=value('location'),hours=value('open_hours');if(phone||location||hours){[phone&&('电话：'+phone),location&&('地点：'+location),hours&&('时间：'+hours)].filter(Boolean).forEach(text=>{const p=document.createElement('p');p.textContent=text;blocks.append(p);});}
  }
  form.addEventListener('input',()=>{dirty=true;saveState.textContent='有修改尚未保存';saveState.classList.add('dirty');updatePreview();});form.addEventListener('change',updatePreview);updatePreview();

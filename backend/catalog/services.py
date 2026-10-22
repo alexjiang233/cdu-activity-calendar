@@ -18,6 +18,7 @@ from datetime import date, datetime, timedelta
 
 from django.db.models import Count, Max, Q
 from django.utils import timezone
+from . import participation
 
 from .models import (Activity, ActivityGroup, CampusService, Fact, Guide, Notice, SiteMeta,
                      Taxonomy)
@@ -95,7 +96,7 @@ def registration_open(notice: Notice) -> bool:
     if notice.conflict:
         return False
     today = china_now().date().isoformat()
-    windows = (notice.extras or {}).get('registration_windows') or []
+    windows = [] if participation.curated(notice) else (notice.extras or {}).get('registration_windows') or []
     windows = [w for w in windows if w.get('start') and w.get('end')]
     if windows:
         inside = any(w['start'] <= today <= w['end'] for w in windows)
@@ -183,6 +184,9 @@ def seasonal_months_for_notice(notice: Notice) -> set[int]:
         months.add(notice.deadline.month)
     if notice.stage_start:
         months.add(notice.stage_start.month)
+    if participation.curated(notice):
+        text=participation.curated(notice).get('fields',{}).get('event_time','')
+        return months | seasonal_months(text)
     for fact in notice.facts.all():
         if timing_clue(fact.kind, fact.value):
             months |= seasonal_months(fact.value)
@@ -203,6 +207,10 @@ def notice_search_text(notice: Notice, facts=None, profile=None) -> str:
     parts = [notice.audience or '', (notice.extras or {}).get('original_title') or '']
     if notice.source_id:
         parts.append(notice.source.title or '')
+    curated_sections=participation.sections(notice)
+    if curated_sections is not None:
+        parts.extend(item['text'] for section in curated_sections for item in section['items'])
+        return ' '.join(part for part in parts if part).lower()
     for fact in (facts if facts is not None else notice.facts.all()):
         parts.extend([fact.label or '', fact.value or '', fact.quote or ''])
     payload = (profile.payload if profile is not None else
@@ -355,9 +363,19 @@ def _fact_payload(fact: Fact) -> dict:
     return data
 
 
+def preview_facts(notice):
+    sections=participation.sections(notice)
+    if sections is None:
+        return [_fact_payload(f) for f in list(notice.facts.all())[:12]]
+    return [{'kind':section['kind'],'label':section['title'],'value':item['text'],
+             'quote':'','locator':'','source_url':notice.source.url if notice.source_id else '',
+             'basis':'editorial'} for section in sections for item in section['items']][:12]
+
+
 def serialize_notice(notice: Notice, detail: bool = False) -> dict:
     """detail=True 给全部事实与完整画像；detail=False 只给列表需要的字段。"""
     extras = notice.extras or {}
+    curated_sections=participation.sections(notice)
     data = {
         'notice_id': notice.id,
         'year': notice.year,
@@ -376,10 +394,15 @@ def serialize_notice(notice: Notice, detail: bool = False) -> dict:
         'conflict': bool(notice.conflict),
         'edition_label': extras.get('edition_label') or '',
         'original_title': extras.get('original_title') or '',
-        'registration_windows': extras.get('registration_windows') or [],
+        'registration_windows': [] if curated_sections is not None else extras.get('registration_windows') or [],
         'fact_count': len(notice.facts.all()) if detail else None,
     }
-    if detail:
+    if curated_sections is not None:
+        data['editorial_curated']=True
+        data['content_profile']={'sections':curated_sections}
+        data['participation_facts']=preview_facts(notice)
+        data['fact_count']=sum(len(section['items']) for section in curated_sections)
+    elif detail:
         profile = getattr(notice, 'profile', None)
         data['content_profile'] = profile.payload if profile else {'sections': []}
         data['participation_facts'] = [_fact_payload(f) for f in notice.facts.all()]
@@ -696,7 +719,7 @@ def decorate(row: CardRow, filters: Filters) -> dict:
     notice = select_version(row.notices, filters) or row.notices[0]
     version = next(v for v in entry['versions'] if v['notice_id'] == notice.id)
     # 卡片上的“关键条件”需要几条事实，只取本页这一条通知
-    version['participation_facts'] = [_fact_payload(f) for f in list(notice.facts.all())[:12]]
+    version['participation_facts'] = preview_facts(notice)
     entry['phase'] = phase(notice)
     entry['registration_open'] = registration_open(notice)
     entry['audience_line'] = notice.audience or ''
@@ -845,12 +868,15 @@ def calendar_annual(month: int) -> dict:
                 stage_end = full.stage_end.isoformat() if full.stage_end else stage_day
                 signals.append({'kind': 'event', 'text': '活动阶段', 'raw': stage_day,
                                 'start': stage_day, 'end': stage_end})
-            for fact in full.facts.all():
-                if not timing_clue(fact.kind, fact.value):
+            editorial=participation.curated(full)
+            clues=([('schedule',line) for line in editorial.get('fields',{}).get('event_time','').splitlines()]
+                   if editorial else [(fact.kind,fact.value) for fact in full.facts.all()])
+            for kind,value in clues:
+                if not timing_clue(kind, value):
                     continue
-                if month in seasonal_months(fact.value):
-                    signals.append({'kind': 'deadline' if fact.kind == 'registration' else 'event',
-                                    'text': fact.value, 'raw': None})
+                if month in seasonal_months(value):
+                    signals.append({'kind': 'deadline' if kind == 'registration' else 'event',
+                                    'text': value, 'raw': None})
             if signals:
                 versions.append({'version': full, 'signals': signals})
         if versions:
