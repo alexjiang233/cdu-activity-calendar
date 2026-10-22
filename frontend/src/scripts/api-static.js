@@ -628,9 +628,12 @@ window.CduApi = (() => {
       const entry = card.entry;
       for (const version of entry.versions || []) {
         if (version.conflict) continue;
+        const eventMeta = {notice_id:version.notice_id, year:version.year,
+          published:version.published, colleges:version.colleges||[], featured:entry.featured===true};
         const deadline = dayPart(version.deadline);
         if (deadline && deadline.slice(0, 7) === target) {
           events.push({
+            ...eventMeta,
             entry_id: card.card_id,
             title: entry.title,
             category: entry.category,
@@ -653,6 +656,7 @@ window.CduApi = (() => {
           const finish = end || begin;
           if (begin.slice(0, 7) === target || finish.slice(0, 7) === target) {
             events.push({
+              ...eventMeta,
               entry_id: card.card_id,
               title: entry.title,
               category: entry.category,

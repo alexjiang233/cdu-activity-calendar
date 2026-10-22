@@ -772,6 +772,105 @@ html[data-input-method=keyboard] .global-nav a[aria-current=page]::after{transfo
  :is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading{padding:10px 0 22px;min-height:0;margin:0 0 22px}
 }
 
+/* One category palette for activity badges, comparison cards and calendar marks. */
+[data-activity-type]{--category-ink:#79514e;--category-wash:#f1e4e0}
+[data-activity-type=sports]{--category-ink:#486657;--category-wash:#e6ede7}
+[data-activity-type=creative]{--category-ink:#815148;--category-wash:#f0e3df}
+[data-activity-type=technology]{--category-ink:#4c5f79;--category-wash:#e4e9f1}
+[data-activity-type=speech]{--category-ink:#76556b;--category-wash:#ece4eb}
+[data-activity-type=volunteering]{--category-ink:#80643b;--category-wash:#f1eadc}
+[data-activity-type=practice]{--category-ink:#4e6f70;--category-wash:#e1ebea}
+[data-activity-type=recruitment]{--category-ink:#8b5a42;--category-wash:#f1e6dd}
+[data-activity-type=learning]{--category-ink:#657042;--category-wash:#e9eddf}
+[data-activity-type=exchange]{--category-ink:#646287;--category-wash:#e9e7f2}
+[data-activity-type=career]{--category-ink:#77634c;--category-wash:#ece7de}
+.entry .category-tag[data-activity-type],.activity-type-tag,.seasonal-kind[data-activity-type]{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--category-wash);background:var(--category-wash);color:var(--category-ink);border-radius:999px;padding:4px 11px;font-size:13px;font-weight:650;line-height:1.6}
+.activity-type-tag:before{content:'';width:6px;height:6px;border-radius:50%;background:var(--category-ink);flex:none}
+#category-tabs button[data-activity-type]{color:var(--category-ink);border-color:var(--category-wash)}
+#category-tabs button[data-activity-type][aria-pressed=true]{background:var(--category-wash);color:var(--category-ink);box-shadow:inset 0 0 0 1px var(--category-ink)}
+.comparison-card{border:1px solid #dfd1c6;border-radius:18px;padding:24px;margin:20px 0 30px;background:#fffcf7;overflow:hidden}
+.comparison-card h3{font-size:25px;line-height:1.45;margin:12px 0 20px}
+.comparison-card .entry-top{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.comparison-eyebrow{font-size:12px;letter-spacing:.08em;color:#876f65}
+.comparison-tools{display:flex;justify-content:space-between;align-items:end;gap:16px;margin:8px 0 14px}
+.comparison-year-pickers{display:flex;gap:16px;min-width:0}
+.comparison-year-pickers label{display:grid;gap:5px;color:#806d64;font-size:12px}
+.comparison-year-pickers select{font-weight:650;font-size:18px;line-height:1.4;font-family:inherit;color:#6b1723;min-height:44px;background:#f7eee7;border:1px solid #dfd1c6;border-radius:10px;padding:6px 30px 6px 12px;width:142px;max-width:100%;font-variant-numeric:tabular-nums}
+.comparison-differences{display:flex;gap:8px;align-items:center;min-height:44px;font-size:13px;white-space:nowrap}
+.comparison-differences input{accent-color:#6b1723;width:16px;height:16px}
+.comparison-summary{font-size:13px;line-height:1.7;color:#806d64;margin:0 0 14px;min-height:23px}
+.comparison-viewport{width:100%;overflow-x:auto;border:1px solid #e7dcd3;border-radius:12px}
+.comparison-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:15px;line-height:1.7}
+.comparison-table th,.comparison-table td{padding:14px 18px;border-bottom:1px solid #e9e0d8;vertical-align:top;text-align:left;overflow-wrap:anywhere}
+.comparison-table thead th{background:#f3eae2;color:#6b1723;font-weight:750;font-size:17px;font-variant-numeric:tabular-nums}
+.comparison-table th:first-child{width:21%;font-size:13px;font-weight:600;color:#766358}
+.comparison-table tbody tr:last-child>*{border-bottom:0}
+.comparison-table [data-comparison-state=changed] td{background:#f8ece4}
+.comparison-row-state{display:block;font-size:11px;color:#8d796c;font-weight:400;margin-top:4px}
+[data-comparison-state=changed] .comparison-row-state{color:#9a4936;font-weight:700}
+[data-comparison-state=same] .comparison-row-state{color:#58705e}
+.comparison-value{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.comparison-expanded .comparison-value{display:block;overflow:visible}
+.comparison-footer{display:flex;gap:16px;justify-content:space-between;flex-wrap:wrap;align-items:center;margin-top:15px}
+.comparison-footer button,.comparison-footer a{min-height:44px;display:inline-flex;align-items:center;font-size:14px}
+.comparison-sources{display:flex;gap:20px}
+.calendar-node-controls{display:flex;align-items:center;flex-wrap:wrap;gap:12px 22px;margin:8px 0 18px}
+.calendar-node-controls .calendar-segments{margin:0;background:#f3ebe4;border-radius:12px;padding:4px;gap:2px}
+.calendar-node-controls .calendar-segments button{border:0;border-radius:9px;min-height:44px;padding:8px 16px;font-size:14px}
+.calendar-node-controls p{font-size:13px;color:#806d64;margin:0;max-width:40ch}
+.calendar-page[data-calendar-view=seasonal] .calendar-node-controls{display:none}
+.calendar-year-label{font-size:13px;font-weight:650;color:#6b1723;background:#f4e7de;border:1px solid #ddc5b7;border-radius:12px;padding:5px 10px}
+.calendar-year-label select{font-size:18px;font-weight:700;color:#6b1723;min-height:38px;border:0;background:transparent}
+.calendar-summary{gap:12px;flex-wrap:wrap}
+.calendar-legend{width:100%;display:flex;flex-wrap:wrap;gap:7px 10px}
+.calendar-legend .activity-type-tag{font-size:12px;padding:3px 9px}
+.calendar-legend .activity-type-tag:before{background:var(--category-ink)}
+.calendar-legend .calendar-node-key:before{display:none}
+.calendar-node-key{font-size:12px;color:#806d64;align-self:center;margin-left:4px}
+.calendar-day .calendar-dots{gap:5px;min-height:10px;flex-wrap:wrap}
+.calendar-dots i[data-activity-type]{width:8px;height:8px;border:2px solid var(--category-ink);background:var(--category-ink);box-sizing:border-box}
+.calendar-dots i.deadline[data-activity-type]{background:transparent}
+.calendar-day[aria-pressed=true] .calendar-dots i[data-activity-type]{background:var(--category-ink)}
+.calendar-day[aria-pressed=true] .calendar-dots i.deadline[data-activity-type]{background:transparent}
+.calendar-day[aria-pressed=true]{background:#f5e7da;color:#4c2924;box-shadow:inset 0 0 0 2px #8f3840}
+.calendar-day.today[aria-pressed=true] .calendar-day-number{border-color:#8f3840;color:#6b1723}
+.calendar-day .calendar-chip[data-activity-type]{background:var(--category-wash);color:var(--category-ink)}
+.calendar-agenda-item{max-width:none}
+.calendar-event-meta .activity-type-tag{font-size:12px}
+@media(max-width:700px){
+ .comparison-card{padding:16px 12px;border-radius:14px;margin-top:16px}
+ .comparison-card h3{font-size:21px;margin-bottom:14px}
+ .comparison-tools{align-items:start;gap:6px;flex-wrap:wrap}
+ .comparison-year-pickers{width:100%;gap:12px}
+ .comparison-year-pickers label{flex:1;min-width:0}
+ .comparison-year-pickers select{width:100%;font-size:16px}
+ .comparison-summary{font-size:12px}
+ .comparison-table{font-size:13px;line-height:1.65}
+ .comparison-table th,.comparison-table td{padding:11px 9px}
+ .comparison-table thead th{font-size:15px}
+ .comparison-table th:first-child{width:23%;font-size:12px}
+ .comparison-value{-webkit-line-clamp:3}
+ .comparison-eyebrow{font-size:11px}
+ .calendar-node-controls{gap:8px;margin-top:0}
+ .calendar-node-controls .calendar-segments{width:100%;display:flex}
+ .calendar-node-controls .calendar-segments button{padding:6px 7px;font-size:13px;flex:1}
+ .calendar-year-label{font-size:12px;gap:6px;padding:3px 7px}
+ .calendar-year-label select{font-size:15px;max-width:100px}
+ .calendar-dots i[data-activity-type]{width:7px;height:7px;border-width:2px}
+ .calendar-page .calendar-legend{gap:5px}
+}
+@media(prefers-reduced-motion:reduce){.comparison-card *{scroll-behavior:auto;transition:none}}
+
+/* The author's manuscript: editorial headings beside a readable text column. */
+.about-sections.about-manuscript{display:block}
+.about-manuscript>section{display:grid;grid-template-columns:minmax(180px,.7fr) minmax(0,2fr);gap:28px 48px;padding:30px 0;border-top:1px solid #dfc5bf}
+.about-manuscript>section>h2{margin:0;padding-top:4px}
+.about-story-body{max-width:72ch;min-width:0}
+.about-story-body p:first-child{margin-top:0}
+.about-story-body p:last-child{margin-bottom:0}
+.about-story-body strong{color:#6b1723;font-variant-numeric:tabular-nums}
+@media(max-width:700px){.about-manuscript>section{grid-template-columns:1fr;gap:14px;padding:25px 0}.about-manuscript>section>h2{font-size:23px}.about-story-body p{font-size:15px;line-height:1.95}}
+
 /* 启动与失败状态：数据未就绪时给出可见反馈，不把空白当成“没有内容” */
 #boot-status{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:24px;background:#6b1723;color:#fff1da;font:14px/1.5 system-ui,sans-serif;overflow:hidden}
 #boot-status[hidden]{display:none}

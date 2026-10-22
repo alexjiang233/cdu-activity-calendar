@@ -80,6 +80,7 @@
  const accents=new IntersectionObserver(entries=>entries.forEach(e=>{e.target.classList.toggle('is-in-view',e.isIntersecting);if(e.isIntersecting&&!reduced.matches&&!paused&&e.target.classList.contains('home-section-heading'))animate(e.target.querySelector('h2'),[{opacity:.6,transform:'translateY(20px)'},{opacity:1,transform:'translateY(0)'}],0,600)}),{threshold:.35});document.querySelectorAll('.home-section-heading,.category-door,.history-preview').forEach(n=>accents.observe(n));
  }
  document.getElementById('about-count').textContent=String((home.counts||{}).cards||0);
+ const guideCount=document.getElementById('about-guide-count');if(guideCount)guideCount.textContent=String((home.counts||{}).guides||0);
  const zones=[...document.querySelectorAll('.home-explore,.home-interlude,.home-picks,.home-history,.home-end')];let scrollQueued=false;
  const progress=make('div',undefined,'scroll-progress');progress.setAttribute('aria-hidden','true');progress.append(make('span'));document.body.append(progress);
  function updateScrollMotion(){

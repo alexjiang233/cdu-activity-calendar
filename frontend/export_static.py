@@ -364,7 +364,7 @@ def assemble_site(exported_at: str, snapshot_info: dict) -> dict:
     import build as frontend_build
 
     template = (SRC / 'index.template.html').read_text(encoding='utf-8')
-    css = (SRC / 'styles' / 'app.css').read_text(encoding='utf-8')
+    css = (SRC / 'styles' / 'app.css').read_text(encoding='utf-8') + '\n' + (SRC / 'styles' / 'activity-views.css').read_text(encoding='utf-8')
     for name in frontend_build.SCRIPTS:
         if not (SRC / 'scripts' / name).exists():
             raise SystemExit(f'缺少脚本：{name}')
@@ -376,6 +376,7 @@ def assemble_site(exported_at: str, snapshot_info: dict) -> dict:
     asset_sources = [
         SRC / 'index.template.html',
         SRC / 'styles' / 'app.css',
+        SRC / 'styles' / 'activity-views.css',
         SRC / 'scripts' / 'api-static.js',
         *[SRC / 'scripts' / name for name in frontend_build.SCRIPTS],
     ]

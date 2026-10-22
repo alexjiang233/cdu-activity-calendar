@@ -15,8 +15,8 @@
  function markRank(event,date){if(event.kind==='deadline')return 3;if(event.start===event.end)return 2;return event.start===date?2:1}
  function dayMarks(events,date){const seen=new Map();for(const event of events){if(!markOn(event,date))continue;const rank=markRank(event,date),current=seen.get(event.entryId);if(!current||rank>current.rank)seen.set(event.entryId,{event,rank})}return [...seen.values()].map(x=>x.event).sort((a,b)=>a.kind.localeCompare(b.kind)||a.title.localeCompare(b.title,'zh-CN'))}
  function matches(event,filters={}){return (!filters.kind||filters.kind==='all'||event.kind===filters.kind)&&(!filters.category||event.category===filters.category)&&(!filters.college||event.colleges.includes(filters.college))&&(!filters.featured||event.featured)}
- function inMonth(event,month){const next=moveMonth(month,1)+'-01';return event.start<next&&event.end>=month+'-01'}
- function onDay(event,date){return event.start<=date&&event.end>=date}
+ function inMonth(event,month){return event.start.slice(0,7)===month||event.end.slice(0,7)===month}
+ function onDay(event,date){return markOn(event,date)}
  function monthEvents(events,month,filters={}){return events.filter(e=>matches(e,filters)&&inMonth(e,month)).sort((a,b)=>a.start.localeCompare(b.start)||a.title.localeCompare(b.title,'zh-CN')||a.kind.localeCompare(b.kind))}
  function mentionedMonths(text){const months=new Set([...String(text||'').matchAll(/(?:^|[^\d])(1[0-2]|0?[1-9])月/g)].map(m=>Number(m[1])));for(const m of String(text||'').matchAll(/(1[0-2]|0?[1-9])月[^月]{0,25}?(?:至|到|—|–|~|～)[^月]{0,12}?(1[0-2]|0?[1-9])月/g)){let n=Number(m[1]);for(let i=0;i<12;i++){months.add(n);if(n===Number(m[2]))break;n=n%12+1}}return months}
  /* 履历、师资介绍、研究方向、获奖与论文清单不是活动时间：它们不能成为报名或日程线索。 */

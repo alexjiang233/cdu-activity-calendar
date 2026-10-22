@@ -972,8 +972,15 @@ def calendar_actual(year: int, month: int) -> dict:
         for notice in row.notices:
             if notice.conflict:
                 continue
+            event_meta = {
+                'notice_id': notice.id, 'year': notice.year,
+                'published': notice.published.isoformat() if notice.published else None,
+                'colleges': [t.code for t in notice.taxonomies.all() if t.kind == 'college'],
+                'featured': row.card.activity.featured,
+            }
             if notice.deadline and (notice.deadline.year, notice.deadline.month) == (year, month):
                 events.append({
+                    **event_meta,
                     'entry_id': row.card.id, 'title': row.card.title,
                     'category': (row.card.activity.category.code if row.card.activity.category_id else ''),
                     'category_label': row.card.activity.category_label,
@@ -995,6 +1002,7 @@ def calendar_actual(year: int, month: int) -> dict:
                 finish = end or begin
                 if begin[:7] == f'{year:04d}-{month:02d}' or finish[:7] == f'{year:04d}-{month:02d}':
                     events.append({
+                        **event_meta,
                         'entry_id': row.card.id, 'title': row.card.title,
                         'category': (row.card.activity.category.code if row.card.activity.category_id else ''),
                         'category_label': row.card.activity.category_label,

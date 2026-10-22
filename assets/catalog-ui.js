@@ -210,7 +210,7 @@
  const knownYearList=knownYears();
  const yearControl=document.getElementById('year');yearControl.replaceChildren();for(const [value,label] of [['','全部年份'],...knownYearList.map(y=>[String(y),y+' 年']),['unknown','年份未明确']]){const o=el('option',label);o.value=value;yearControl.append(o)}
  const filterKeys=['q','college','level','year','category','phase','month','month_basis','interest'];
- function choice(parent,text,key,value){const b=el('button',text);b.type='button';b.dataset[key]=value;b.setAttribute('aria-pressed','false');b.addEventListener('click',()=>{if(key==='category'&&value){const values=new Set(state.category.split(',').filter(Boolean));if(values.has(value))values.delete(value);else values.add(value);select(key,[...values].join(','))}else select(key,value)});parent.append(b)}
+ function choice(parent,text,key,value){const b=el('button',text);b.type='button';b.dataset[key]=value;if(key==='category'&&value)b.dataset.activityType=value;b.setAttribute('aria-pressed','false');b.addEventListener('click',()=>{if(key==='category'&&value){const values=new Set(state.category.split(',').filter(Boolean));if(values.has(value))values.delete(value);else values.add(value);select(key,[...values].join(','))}else select(key,value)});parent.append(b)}
  const yearTabs=el('div',undefined,'year-shortcuts');yearTabs.setAttribute('role','group');yearTabs.setAttribute('aria-label','按公告年份筛选');choice(yearTabs,'全部年份','year','');for(const y of knownYearList)choice(yearTabs,String(y),'year',String(y));document.querySelector('#filters .filter-body').append(yearTabs);
  const months=document.getElementById('month-tabs');choice(months,'全年','month','');for(let i=1;i<=12;i++)choice(months,i+'月','month',String(i));choice(months,'日期待补','month','unknown');
  const types=document.getElementById('category-tabs');choice(types,'全部类型','category','');for(const id of ['sports','creative','technology','speech','volunteering','practice','recruitment'])choice(types,categories[id],'category',id);const extra=el('details',undefined,'extra-types');extra.append(el('summary','更多类型'));const extraBody=el('div');for(const id of ['learning','exchange','career'])choice(extraBody,categories[id],'category',id);extra.append(extraBody);types.append(extra);
@@ -395,7 +395,7 @@
   const chosen=yearList.find(v=>candidates.includes(v))||yearList[0];
   const version=yearList.find(v=>v.source_url===picked)||(serverVersion&&yearList.includes(serverVersion)?serverVersion:chosen);
   const status=core.phase(version,entry.kind,now()),a=el('article',undefined,'entry');a.dataset.id=entry.id;const displayTitle=entry.id==='activity-4b6bd9d295d4'?'鹤鸣杯演讲比赛':entry.title;
-  const top=el('div',undefined,'entry-top'),category=el('div',undefined,'entry-category'),categoryName=el('span',entry.category_label,'category-tag');category.append(categoryName);
+  const top=el('div',undefined,'entry-top'),category=el('div',undefined,'entry-category'),categoryName=el('span',entry.category_label,'category-tag');categoryName.dataset.activityType=entry.category;category.append(categoryName);
   const shownLevels=(version.levels||[]).filter(level=>level!=='unknown');
   for(const level of shownLevels){const b=el('button',catalog.levels[level],'scope-tag');b.type='button';b.addEventListener('click',()=>select('level',level));category.append(b)}
   if(!shownLevels.length&&entry.id==='activity-4b6bd9d295d4')category.append(el('span','院级','scope-tag scope-tag-inferred'));
@@ -506,9 +506,61 @@
   const retry=el('button','重试','primary-button');retry.type='button';
   retry.addEventListener('click',()=>render());box.append(retry);return box;
  }
+ const compareSelections=new Map(),compareLoads=new Map();let compareObserver;
+ const compareFields=[['audience','参与对象'],['deadline','报名 / 提交截止'],['schedule','举办时间'],['location','地点'],['registration','报名方式'],['materials','作品 / 材料'],['conditions','资格要求'],['fees','费用'],['benefits','奖励']];
+ function comparisonValues(version){
+  const groups=mergedProfile(version),items=kind=>(groups.get(kind)?.items||[]).map(i=>i.text).filter(Boolean);
+  const monthDay=value=>String(value||'').replace(/^(20\d{2})[-./](\d{2})[-./](\d{2})(?:T(\d{2}:\d{2})(?::\d{2})?(?:[+-]\d{2}:\d{2}|Z)?)?$/,(_,year,m,d,clock)=>Number(m)+'月'+Number(d)+'日'+(clock&&clock!=='00:00'?' '+clock:'')+(version.year&&Number(year)!==Number(version.year)?Number(year)===Number(version.year)+1?'（次年）':'（'+year+'年）':''));
+  const timing=cardTiming(version,items),audiences=[...new Set([version.audience,...items('audience')].map(audienceDetail).filter(Boolean))];
+  const audience=audiences.filter((text,i,all)=>!all.some((other,j)=>i!==j&&other.length>text.length&&normKey(other).includes(normKey(text)))).join('；');
+  const span=version.stage_start?[monthDay(version.stage_start),version.stage_end&&version.stage_end!==version.stage_start?monthDay(version.stage_end):''].filter(Boolean).join(' — '):'';
+  const cutoffLabel={registration:'报名：',submission:'作品提交：',combined:'报名及作品：',notice:'所列截止：'}[version.deadline_kind]||'';
+  const values={audience,deadline:version.deadline?cutoffLabel+monthDay(version.deadline):timing.deadline.replace(/20\d{2}年/g,''),schedule:span||timing.event.replace(/20\d{2}年/g,'')};
+  for(const kind of ['location','registration','materials','conditions','fees','benefits'])values[kind]=items(kind).join('；');
+  if(version.conflict)for(const key of ['deadline','schedule'])values[key]='';
+  return values;
+ }
+ function comparisonState(values){const normalized=values.map(value=>String(value||'').replace(/[\s，,。；;：:]/g,'').toLowerCase());return normalized.some(value=>!value||/^(?:[-—–]+|未知|未说明|未提取|待核实|未提供|详见原文|以原文为准)$/.test(value))?'unknown':normalized.every(value=>value===normalized[0])?'same':'changed'}
+ window.ActivityComparison={values:comparisonValues,status:comparisonState};
+ async function loadComparisonVersion(entry,version){
+  if(version._full)return;
+  const key=entry.id+'|'+version.notice_id;
+  if(!compareLoads.has(key))compareLoads.set(key,window.CduApi.detail(entry.id,version.notice_id).then(data=>{
+   const full=data.notice;if(!full)throw new Error('通知不存在');return full;
+  }).catch(error=>{compareLoads.delete(key);throw error}));
+  Object.assign(version,await compareLoads.get(key),{_full:true});
+ }
+ function comparisonCard(entry){
+  const versions=yearGroups(entry).filter(([year])=>year!=='unknown').map(([,list])=>list[0]).sort((a,b)=>b.year-a.year);
+  if(versions.length<2)return card(entry);
+  let selected=compareSelections.get(entry.id);
+  if(!selected||selected.some(id=>!versions.some(v=>v.notice_id===id))){const newer=versions.find(v=>String(v.year)===state.year)||versions[0],older=versions.find(v=>v.year<newer.year)||versions.find(v=>v!==newer);selected=[older.notice_id,newer.notice_id];compareSelections.set(entry.id,selected)}
+  const article=el('article',undefined,'entry comparison-card');article.dataset.id=entry.id;
+  const tag=el('span',entry.category_label,'category-tag');tag.dataset.activityType=entry.category;const top=el('div',undefined,'entry-top');top.append(tag,el('span','两年对照','comparison-eyebrow'));const heading=el('h3'),title=el('button',entry.title,'entry-title-button');title.type='button';title.setAttribute('aria-expanded','false');heading.append(title);article.append(top,heading);
+  const tools=el('div',undefined,'comparison-tools'),pickers=[],controls=el('div',undefined,'comparison-year-pickers');
+  for(let column=0;column<2;column++){const label=el('label',column===0?'对照年份':'另一年份'),picker=el('select');picker.setAttribute('aria-label',entry.title+' · '+(column===0?'左侧年份':'右侧年份'));for(const v of versions){const option=el('option',v.year+' 年');option.value=v.notice_id;picker.append(option)}picker.value=selected[column];picker.addEventListener('change',()=>{selected[column]=picker.value;compareSelections.set(entry.id,selected);refresh(true)});label.append(picker);controls.append(label);pickers.push(picker)}
+  const switchLabel=el('label',undefined,'comparison-differences'),only=el('input');only.type='checkbox';switchLabel.append(only,document.createTextNode('只看差异'));tools.append(controls,switchLabel);article.append(tools);
+  const summary=el('p','正在对齐两年的通知…','comparison-summary');summary.setAttribute('role','status');const viewport=el('div',undefined,'comparison-viewport'),table=el('table',undefined,'comparison-table');table.setAttribute('aria-label',entry.title+'往届信息对照');viewport.append(table);article.append(summary,viewport);
+  const footer=el('div',undefined,'comparison-footer'),expand=el('button','更多对比项','text-button'),sources=el('div',undefined,'comparison-sources');expand.type='button';expand.setAttribute('aria-expanded','false');footer.append(expand,sources);article.append(footer);let expanded=false,serial=0;
+  function paint(error){
+   const chosen=selected.map(id=>versions.find(v=>v.notice_id===id)),values=chosen.map(comparisonValues),all=compareFields.map(([key,label])=>({key,label,values:values.map(v=>v[key]),status:comparisonState(values.map(v=>v[key]))}));
+   table.replaceChildren();const head=el('thead'),headRow=el('tr');headRow.append(el('th','对比项'));for(const v of chosen){const th=el('th',v.year+' 年');th.scope='col';headRow.append(th)}head.append(headRow);table.append(head);const body=el('tbody');
+   const visible=all.filter((row,i)=>(expanded||i<4)&&(!only.checked||row.status==='changed'));
+   for(const row of visible){const tr=el('tr');tr.dataset.comparisonState=row.status;const th=el('th',row.label);th.scope='row';const flag=el('span',row.status==='same'?'相同':row.status==='changed'?'不同':'待补','comparison-row-state');th.append(flag);tr.append(th);for(const value of row.values){const td=el('td'),text=el('span',value||'未提取','comparison-value');text.title=value||'这份通知暂无已提取信息';td.append(text);tr.append(td)}body.append(tr)}
+   if(!visible.length){const tr=el('tr'),td=el('td','当前显示项暂无已确认差异；资料缺失的项不作判断。');td.colSpan=3;tr.append(td);body.append(tr)}table.append(body);article.classList.toggle('comparison-expanded',expanded);
+   const shown=all.filter((row,i)=>expanded||i<4),count=status=>shown.filter(row=>row.status===status).length;
+   summary.textContent=error?'部分通知未加载成功，请重试。':chosen.some(v=>!v._full)?'先看日期与对象，正在读取完整通知…':count('same')+' 项相同 · '+count('changed')+' 项不同'+(count('unknown')?' · '+count('unknown')+' 项资料待补':'');
+   sources.replaceChildren();for(const v of chosen)if(safeCduUrl(v.source_url))sources.append(link(v.year+' 原文',v.source_url));
+   for(let i=0;i<2;i++){pickers[i].value=selected[i];for(const option of pickers[i].options)option.disabled=option.value===selected[1-i]}
+  }
+  async function refresh(fetchDetails){const ticket=++serial;paint();if(!fetchDetails)return;try{await Promise.all(selected.map(id=>loadComparisonVersion(entry,versions.find(v=>v.notice_id===id))));if(ticket===serial&&article.isConnected)paint()}catch(_){if(ticket!==serial)return;paint(true);let retry=article.querySelector('.comparison-retry');if(!retry){retry=el('button','重试读取','text-button comparison-retry');retry.type='button';retry.addEventListener('click',()=>{retry.remove();refresh(true)});footer.prepend(retry)}}}
+  function toggle(){expanded=!expanded;expand.textContent=expanded?'收起更多项':'更多对比项';expand.setAttribute('aria-expanded',String(expanded));title.setAttribute('aria-expanded',String(expanded));paint();if(!reduced.matches&&table.animate)table.animate([{opacity:.45,transform:'translateY(5px)'},{opacity:1,transform:'translateY(0)'}],{duration:300,easing:'cubic-bezier(.22,1,.36,1)'})}
+  expand.addEventListener('click',toggle);title.addEventListener('click',toggle);only.addEventListener('change',()=>paint());paint();article._loadComparison=()=>refresh(true);return article;
+ }
  function paintResults(list,rows,previous){
   lastRows=rows;
-  list.replaceChildren(...rows.map(card));
+  compareObserver?.disconnect();list.dataset.view=state.view;list.replaceChildren(...rows.map(state.view==='compare'?comparisonCard:card));
+  if(state.view==='compare'){if('IntersectionObserver'in window){compareObserver=new IntersectionObserver(items=>{for(const item of items)if(item.isIntersecting){compareObserver.unobserve(item.target);item.target._loadComparison?.()}},{rootMargin:'180px'});for(const article of list.querySelectorAll('.comparison-card'))compareObserver.observe(article)}else for(const article of list.querySelectorAll('.comparison-card'))article._loadComparison?.()}
   animateResults(list,previous);
   const pages=serverPages,current=serverPage;
   if(pages<=1)return;
@@ -528,8 +580,8 @@
   const status=el('p','第 '+current+' / '+pages+' 页 · 共 '+serverCount+' 项','pager-status');status.id='pager-status';status.setAttribute('aria-live','polite');nav.append(status);
   list.append(nav);
  }
- async function render(){SitePages.show(state.view);if(['home','about','calendar','guides'].includes(state.view))return;const list=document.getElementById('catalog-list');const previous=new Map([...list.querySelectorAll('article')].map(n=>[n.dataset.id,n.getBoundingClientRect()]));document.getElementById('view-description').classList.toggle('sr-only',state.view!=='registration');const data=await loadRows();if(!data)return;const rows=serverRows;document.getElementById('result-title').textContent='活动列表';document.getElementById('count').textContent=({discover:'精选活动',all:'全部活动',registration:'当前报名',compare:'往届对比'}[state.view]||'活动')+' · '+serverCount+' 项结果';
-  document.getElementById('view-description').textContent=state.view==='compare'?'同一活动的多个年份列在一起；默认显示最近一年，点年份按钮切换，同年多份通知可按用途选择。':state.view==='registration'?'列出原文写明报名或提交截止、且今天还没到期的活动。截止日期来自通知原文；没有写明截止的记录可在全部活动里按时间查找。': '优先看需要组队、准备作品或提出申请的竞赛、项目、实践与招募。时间和资格请回到原文确认。';
+ async function render(){SitePages.show(state.view);if(['home','about','calendar','guides'].includes(state.view))return;const list=document.getElementById('catalog-list');const previous=new Map([...list.querySelectorAll('article')].map(n=>[n.dataset.id,n.getBoundingClientRect()]));document.getElementById('view-description').classList.toggle('sr-only',!['registration','compare'].includes(state.view));const data=await loadRows();if(!data)return;const rows=serverRows;document.getElementById('result-title').textContent='活动列表';document.getElementById('count').textContent=({discover:'精选活动',all:'全部活动',registration:'当前报名',compare:'往届对比'}[state.view]||'活动')+' · '+serverCount+' 项结果';
+  document.getElementById('view-description').textContent=state.view==='compare'?'两年并排，看相同与不同。先看四项，更多要求按需展开。':state.view==='registration'?'列出原文写明报名或提交截止、且今天还没到期的活动。截止日期来自通知原文；没有写明截止的记录可在全部活动里按时间查找。': '优先看需要组队、准备作品或提出申请的竞赛、项目、实践与招募。时间和资格请回到原文确认。';
   paintResults(list,rows,previous);if(data.error){list.append(errorBlock(data.error))}else if(!rows.length){const e=el('div',undefined,'empty');e.append(el('h3','没有匹配的活动'),el('p',state.view==='registration'?'当前没有原文写明、且尚未到期的报名或提交机会。可以清除筛选，或到全部活动按月份查找。':state.month==='unknown'?'当前类型没有日期待补的记录。':state.month?'这个月份暂未收录匹配记录，试试全年或其他类型。':'试试其他类型，或清除筛选。'));if(state.month){const all=el('button','查看全年','text-button');all.type='button';all.addEventListener('click',()=>select('month',''));e.append(all)}if(state.interest!=='any'){const any=el('button','不限学院查看','text-button');any.type='button';any.addEventListener('click',()=>{try{localStorage.removeItem('cdu-college-preference')}catch{}select('interest','any')});e.append(any)}const b=el('button','清除全部筛选','primary-button');b.type='button';b.addEventListener('click',reset);e.append(b);list.append(e)}
   const tags=document.getElementById('active-tags');tags.replaceChildren();if(state.interest!=='any'){const b=el('button','适合 '+catalog.colleges[state.interest]+' ×','filter-tag');b.addEventListener('click',()=>{try{localStorage.removeItem('cdu-college-preference')}catch{}select('interest','any')});tags.append(b)}
   for(const key of ['q','college','level','year','category','phase','month']){if(!state[key])continue;const values=key==='category'?state.category.split(','):[state[key]];for(const value of values){const text=key==='q'?'搜索：'+value:key==='category'?categories[value]:key==='month'?(value==='unknown'?'日期待补':value+'月')+' · '+(state.month_basis==='seasonal'?'往年参与':state.month_basis==='deadline'?'所列截止':'举办时间'):document.getElementById(key).selectedOptions[0]?.textContent||value;const b=el('button',text,'filter-tag');b.type='button';b.append(el('span','×'));b.setAttribute('aria-label','移除筛选：'+text);b.addEventListener('click',()=>select(key,key==='category'?state.category.split(',').filter(k=>k!==value).join(','):''));tags.append(b)}}

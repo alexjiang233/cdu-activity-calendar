@@ -89,7 +89,7 @@ BOOT_SCRIPT = """
 
 def build():
     template = (SRC / 'index.template.html').read_text(encoding='utf-8')
-    css = (SRC / 'styles' / 'app.css').read_text(encoding='utf-8')
+    css = (SRC / 'styles' / 'app.css').read_text(encoding='utf-8') + '\n' + (SRC / 'styles' / 'activity-views.css').read_text(encoding='utf-8')
     for name in SCRIPTS:
         if not (SRC / 'scripts' / name).exists():
             raise SystemExit(f'缺少脚本：{name}')
