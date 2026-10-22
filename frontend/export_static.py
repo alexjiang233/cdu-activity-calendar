@@ -405,11 +405,11 @@ def assemble_site(exported_at: str, snapshot_info: dict) -> dict:
     page = template.replace(
         '</head>',
         f' <meta name="cdu-static-revision" content="{build_id}">'
-        f'<link rel="stylesheet" href="assets/app.css?v={build_id}"></head>',
+        f'<style>{frontend_build.BOOT_STYLE}</style><link rel="stylesheet" href="assets/app.css?v={build_id}"></head>',
     )
     page = re.sub(
         r'(<body[^>]*>)',
-        r'\1\n<div id="boot-status" role="status" aria-live="polite">正在载入…</div>',
+        lambda m:m.group(1)+frontend_build.BOOT_MARKUP,
         page, count=1,
     )
     page = page.replace('</body>', boot + '</body>')

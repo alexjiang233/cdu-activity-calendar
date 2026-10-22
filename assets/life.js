@@ -7,6 +7,19 @@
  const local=(text,url,cls='life-link')=>{const a=make('a',text,cls);a.href=url;return a};
  const reduced=matchMedia('(prefers-reduced-motion:reduce)');
  const icons={network:'M4 8a13 13 0 0 1 24 0M8 13a8 8 0 0 1 16 0M13 18a3 3 0 0 1 6 0M16 23h.01',running:'M18 4h.01M13 10l5-2 5 5 5 1M18 9l-4 9 5 3 1 7M14 18l-5 6H4',club:'M11 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM21 13a4 4 0 1 0 0-8M3 27v-4a8 8 0 0 1 16 0v4M23 17a7 7 0 0 1 6 6v4'};
+ Object.assign(icons,{
+  living:'M6 14 16 5l10 9M9 12v15h14V12M14 27v-9h5v9M12 14h.01M21 14h.01',
+  account:'M10 14V9a6 6 0 0 1 12 0v5M7 14h18v14H7zM16 19v4',
+  library:'M4 6h8l4 3 4-3h8v20h-8l-4 3-4-3H4zM16 9v20M8 12h4M8 17h4M20 12h4M20 17h4',
+  study:'M4 9h24v18H4zM4 15h24M10 5v8M22 5v8M10 20h3M19 20h3M10 24h3',
+  support:'M5 13 16 5l11 8-11 8zM9 16v7q7 6 14 0v-7M27 13v11',
+ });
+ const guideLooks={
+  'campus-living':['living','clay'],'mobile-network':['network','blue'],
+  'digital-account':['account','violet'],'running':['running','orange'],
+  'library-basics':['library','teal'],'student-affairs':['study','indigo'],
+  'student-support':['support','gold'],
+ };
  function icon(type){const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 32 32');svg.setAttribute('aria-hidden','true');const p=document.createElementNS(svg.namespaceURI,'path');p.setAttribute('d',icons[type]||icons.network);svg.append(p);return svg}
  let guideCategory='全部',serviceCategory='全部',lastGuide=null;
  let guideRows=[],serviceRows=[],guidesLoaded=false,servicesLoaded=false,articleRequest=0,routeRequest=0;
@@ -33,7 +46,7 @@
   chips('guide-filters',[...new Set(guideRows.map(g=>g.category).filter(Boolean))],guideCategory,v=>{guideCategory=v;renderGuides()});
   const q=query('guide-search');const rows=guideRows.filter(g=>(guideCategory==='全部'||g.category===guideCategory)&&[g.title,g.subtitle,g.summary,...(g.tags||[])].join(' ').toLowerCase().includes(q));
   document.getElementById('guide-count').textContent=rows.length+' 篇实用指南';const host=document.getElementById('guide-grid');host.replaceChildren();
-  rows.forEach((g,i)=>{const a=local(undefined,'#guide/'+g.id,'guide-card');a.style.setProperty('--i',i);const art=make('div',undefined,'guide-card-art');art.append(icon(g.icon),make('span',g.number,'guide-no'));const metaRow=make('div',undefined,'guide-card-meta');metaRow.append(make('span',g.category),make('span','阅读指南 ↗'));const body=make('div',undefined,'guide-card-body');body.append(metaRow,make('h2',g.title),make('p',g.summary));const tags=make('div',undefined,'guide-tags');(g.tags||[]).forEach(t=>tags.append(make('span',t)));body.append(tags);a.append(art,body);host.append(a)});
+  rows.forEach((g,i)=>{const a=local(undefined,'#guide/'+g.id,'guide-card');a.style.setProperty('--i',i);const look=guideLooks[g.id]||[g.icon,'clay'];a.dataset.tone=look[1];const art=make('div',undefined,'guide-card-art');art.append(icon(look[0]),make('span',g.number,'guide-no'));const metaRow=make('div',undefined,'guide-card-meta');metaRow.append(make('span',g.category),make('span','阅读指南 ↗'));const body=make('div',undefined,'guide-card-body');body.append(metaRow,make('h2',g.title),make('p',g.summary));const tags=make('div',undefined,'guide-tags');(g.tags||[]).forEach(t=>tags.append(make('span',t)));body.append(tags);a.append(art,body);host.append(a)});
   if(!rows.length)empty(host,()=>{guideCategory='全部';document.getElementById('guide-search').value='';renderGuides()});
  }
  async function renderArticle(id){
@@ -95,5 +108,5 @@
  }
  document.getElementById('guide-search').addEventListener('input',()=>{if(guidesLoaded)renderGuides()});
  document.getElementById('service-search').addEventListener('input',()=>{if(servicesLoaded)renderServices()});
- document.addEventListener('cdu:view',route);route();
+ document.addEventListener('cdu:view',route);window.CduInitialViewReady=route();
 })();

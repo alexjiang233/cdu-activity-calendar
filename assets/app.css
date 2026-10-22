@@ -746,11 +746,48 @@ html[data-input-method=keyboard] .global-nav a[aria-current=page]::after{transfo
 .service-grid .service-copy-phone{font-size:10px;padding:2px 4px}
 @media(max-width:700px){.service-grid .service-phone-row .service-phone{font-size:13px}.service-grid .service-copy-phone{min-height:0}}
 
+/* 指南按内容固定配色，筛选后仍保持各自的视觉身份。 */
+.guide-card[data-tone] .guide-card-art{background:var(--guide-paper);color:var(--guide-ink)}
+.guide-card[data-tone=clay]{--guide-paper:#eed9ce;--guide-ink:#853f34}
+.guide-card[data-tone=blue]{--guide-paper:#dce8f2;--guide-ink:#315d83}
+.guide-card[data-tone=violet]{--guide-paper:#e7dff0;--guide-ink:#72528f}
+.guide-card[data-tone=orange]{--guide-paper:#f5ddc5;--guide-ink:#a75227}
+.guide-card[data-tone=teal]{--guide-paper:#dce9e2;--guide-ink:#366a60}
+.guide-card[data-tone=indigo]{--guide-paper:#dfe2ef;--guide-ink:#515d91}
+.guide-card[data-tone=gold]{--guide-paper:#efe4bd;--guide-ink:#88691c}
+.guide-card[data-tone] .guide-card-art svg{stroke-width:1.35;filter:drop-shadow(0 5px 7px #ffffff45)}
+
+/* 一级内页标题只有这一套尺寸，避免页面旧规则改变中英文的比例。 */
+:root{--page-title-size:clamp(36px,4.8vw,64px);--page-kicker-size:12px;--page-deck-size:17px}
+:is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading{padding:28px 0 34px;margin:0 0 22px;min-height:330px;align-items:center}
+:is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading .editorial-heading-copy h1{font-family:var(--display-face);font-size:var(--page-title-size);font-weight:800;line-height:1.24;letter-spacing:-.035em;margin:0;max-width:12em}
+:is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading .editorial-kicker{font-family:'CDU Sans',Manrope,Arial,sans-serif;font-size:var(--page-kicker-size);font-weight:700;line-height:1.4;letter-spacing:.2em;margin:0 0 18px}
+:is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading .editorial-heading-copy>p:not(.editorial-kicker){font-size:var(--page-deck-size);font-weight:400;line-height:1.85;margin:18px 0 0;color:#805e60}
+@media(max-width:700px){
+ :root{--page-title-size:36px;--page-kicker-size:11px;--page-deck-size:16px}
+ :is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading{padding:22px 0 26px;min-height:0;margin:0 0 22px}
+}
 
 /* 启动与失败状态：数据未就绪时给出可见反馈，不把空白当成“没有内容” */
-#boot-status{position:fixed;left:0;right:0;top:0;z-index:80;display:flex;justify-content:center;
-  padding:10px 16px;background:#6b1723;color:#fff4e8;font-size:14px;line-height:1.5}
+#boot-status{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:24px;background:#6b1723;color:#fff1da;font:14px/1.5 system-ui,sans-serif;overflow:hidden}
 #boot-status[hidden]{display:none}
-#boot-status[data-state=error]{background:#7d1d2a}
+.is-booting{overflow:hidden}
+.is-booting>header,.is-booting>main,.is-booting>footer,.is-booting>.skip{visibility:hidden}
+.boot-scene{width:130px;height:110px;position:relative}
+.boot-ticket{position:absolute;width:76px;height:94px;left:27px;top:8px;border:1px solid #efd3ab80;border-radius:8px;background:#85313b;transform:rotate(-16deg);animation:boot-float 2s ease-in-out infinite}
+.boot-ticket:nth-child(2){transform:rotate(14deg);background:#b16362;animation-delay:-.65s}
+.boot-ticket:nth-child(3){transform:rotate(-2deg);background:#ffe3b6;color:#6b1723;display:grid;place-items:center;animation-delay:-1.3s}
+.boot-ticket svg{width:42px;height:42px;fill:none;stroke:currentColor;stroke-width:1.4;stroke-linecap:round}
+.boot-brand{font:500 11px/1.5 system-ui,sans-serif;letter-spacing:.27em;opacity:.65}
+.boot-title{font:600 clamp(26px,5vw,40px)/1.4 Georgia,'Noto Serif SC',serif;letter-spacing:.05em;margin:0}
+.boot-message{font-size:13px;color:#edc8bd;min-height:24px;text-align:center;max-width:85vw}
+.boot-line{width:94px;height:2px;background:#efc9af30;overflow:hidden}
+.boot-line:after{content:'';display:block;width:45%;height:100%;background:#ffe3b6;animation:boot-line 1.3s ease-in-out infinite}
+#boot-status.is-leaving{animation:boot-reveal .55s cubic-bezier(.76,0,.24,1) both;pointer-events:none}
+#boot-status[data-state=error] .boot-line{display:none}
 #boot-status button{margin-left:14px;border:1px solid #ffd9c2;background:transparent;color:inherit;
   border-radius:6px;padding:4px 10px;font:inherit;cursor:pointer}
+@keyframes boot-float{50%{translate:0 -8px}}
+@keyframes boot-line{from{translate:-110% 0}to{translate:330% 0}}
+@keyframes boot-reveal{to{clip-path:inset(0 0 100% 0)}}
+@media(prefers-reduced-motion:reduce){.boot-ticket,.boot-line:after{animation:none}#boot-status.is-leaving{animation:none;opacity:0}}

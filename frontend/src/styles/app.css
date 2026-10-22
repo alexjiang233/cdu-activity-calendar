@@ -746,3 +746,24 @@ html[data-input-method=keyboard] .global-nav a[aria-current=page]::after{transfo
 .service-grid .service-copy-phone{font-size:10px;padding:2px 4px}
 @media(max-width:700px){.service-grid .service-phone-row .service-phone{font-size:13px}.service-grid .service-copy-phone{min-height:0}}
 
+/* 指南按内容固定配色，筛选后仍保持各自的视觉身份。 */
+.guide-card[data-tone] .guide-card-art{background:var(--guide-paper);color:var(--guide-ink)}
+.guide-card[data-tone=clay]{--guide-paper:#eed9ce;--guide-ink:#853f34}
+.guide-card[data-tone=blue]{--guide-paper:#dce8f2;--guide-ink:#315d83}
+.guide-card[data-tone=violet]{--guide-paper:#e7dff0;--guide-ink:#72528f}
+.guide-card[data-tone=orange]{--guide-paper:#f5ddc5;--guide-ink:#a75227}
+.guide-card[data-tone=teal]{--guide-paper:#dce9e2;--guide-ink:#366a60}
+.guide-card[data-tone=indigo]{--guide-paper:#dfe2ef;--guide-ink:#515d91}
+.guide-card[data-tone=gold]{--guide-paper:#efe4bd;--guide-ink:#88691c}
+.guide-card[data-tone] .guide-card-art svg{stroke-width:1.35;filter:drop-shadow(0 5px 7px #ffffff45)}
+
+/* 一级内页标题只有这一套尺寸，避免页面旧规则改变中英文的比例。 */
+:root{--page-title-size:clamp(36px,4.8vw,64px);--page-kicker-size:12px;--page-deck-size:17px}
+:is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading{padding:28px 0 34px;margin:0 0 22px;min-height:330px;align-items:center}
+:is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading .editorial-heading-copy h1{font-family:var(--display-face);font-size:var(--page-title-size);font-weight:800;line-height:1.24;letter-spacing:-.035em;margin:0;max-width:12em}
+:is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading .editorial-kicker{font-family:'CDU Sans',Manrope,Arial,sans-serif;font-size:var(--page-kicker-size);font-weight:700;line-height:1.4;letter-spacing:.2em;margin:0 0 18px}
+:is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading .editorial-heading-copy>p:not(.editorial-kicker){font-size:var(--page-deck-size);font-weight:400;line-height:1.85;margin:18px 0 0;color:#805e60}
+@media(max-width:700px){
+ :root{--page-title-size:36px;--page-kicker-size:11px;--page-deck-size:16px}
+ :is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading{padding:22px 0 26px;min-height:0;margin:0 0 22px}
+}
