@@ -303,21 +303,39 @@
  window.ActivityDetails={render:activityProfile};
  const editionSelection=new Map();const yearSelection=new Map();const linkedEdition=new URL(location.href).searchParams.get('edition');let linkedEditionApplied=false;
  function conciseAudience(value){
-  const text=String(value||'').replace(/\s+/g,' ').replace(/^(?:参与|申请|申报|活动|面向|招募)?对象\s*[:：]\s*/,'').trim();
-  if(!text)return '';
-  if(/本科生/.test(text)&&!/(专科|研究生|高职|年龄(?:不超过|不低于|须|要求|限制)|专业(?:限|须|要求|必须)|国籍|学院|年级|仅限|须|需|不得|不具备)/.test(text)&&/(全体|全校|全日制.*本科生|本科生.*全日制|在校本科生|正式学籍)/.test(text))return '全体本科生';
-  if(/(?:本、专科|本科生.{0,6}专科生|专科生.{0,6}本科生)/.test(text)&&!/(研究生|年级|学院|仅限|年龄(?:不超过|不低于|须|要求|限制)|专业(?:限|须|要求|必须))/.test(text))return '本科生和专科生';
-  if(/(?:全体|全校|成都大学|我校).*(?:本科生|专科生|研究生)|(?:本科生|专科生|研究生).*(?:均可|都可|全体)/.test(text)&&/(本科生.*(?:专科|研究生)|专科.*研究生|研究生.*本科生)/.test(text))return '全体在校生';
-  if(/学院全体在校学生/.test(text))return text.replace('全体在校学生','学生');
-  if(/^(?:全校学生|全体在校学生|全校师生|全体师生)[。；;，,]?$/.test(text))return '全体在校生';
-  if(/本科A组/.test(text)&&/本科B组/.test(text)&&/我校.{0,8}B组/.test(text))return '本科生（本科 B 组）';
-  if(/赛道|组别|甲组|乙组/.test(text)&&text.length>40)return '';
-  if(text.length<=34)return text;
-  const NOISE=/为贯彻落实|根据《|现将|有关事项|工作安排|工作机制|营造|高度重视|精心组织|贯穿|深化改革|育人|宣传|部署/;
-  const clauses=text.split(/[；;。]/).flatMap(t=>t.split(/[，,]/)).map(t=>t.trim()).filter(Boolean);
-  const hit=clauses.find(t=>/(?:面向|限|全体|全校|在校|本科|专科|研究生|年级|专业|学院)/.test(t)&&!NOISE.test(t)&&t.length<=30);
-  return hit||'';
+  const text=String(value||'');
+  if(!text.trim())return '';
+  const excluded=terms=>new RegExp('(?:不含|不包括|不包含|不招收|不招|不面向|不接受|不适用|不列入|排除)\\s*(?:(?:全日制|在校|全体|本校|我校|正式学籍|面向|招收|招募|报考|申请)\\s*)*(?:'+terms+')').test(text);
+  const excludedAny=/不含|不包括|不包含|不招收|不招|不面向|不接受|不适用|不列入|排除/.test(text);
+  const teacher=!excluded('教师|教职工|师生')&&/教师|教职工|师生/.test(text);
+  const broad=!excludedAny&&/(?:全体|全校|所有)(?:在校)?(?:学生|在校生)|全校师生|全体师生/.test(text);
+  const undergraduate=!excluded('本科|本专科|本[、，,\/与及和]?专科')&&/本科|本[、，,\/与及和]?专科/.test(text);
+  const vocational=!excluded('专科|高职|高专')&&/专科|高职|高专/.test(text);
+  const graduate=!excluded('研究生|硕士|博士')&&/研究生|硕士|博士/.test(text);
+  if(broad||(undergraduate&&vocational&&graduate))return teacher?'师生':'全体学生';
+  const labels=[];
+  if(undergraduate||/本[、，,\/与及和]专科/.test(text))labels.push('本科生');
+  if(vocational)labels.push('专科生');
+  if(graduate)labels.push('研究生');
+  if(teacher)labels.push('教师');
+  if(!labels.length&&!excluded('学生|在校生|师生')&&/学生|在校生|师生/.test(text))labels.push('学生');
+  return labels.join('、');
  }
+ function audienceDetail(value){
+  let text=String(value||'').replace(/\s+/g,' ').replace(/^(?:参与|申请|申报|活动|面向|招募|参赛)?对象\s*[:：]\s*/,'')
+   .replace(/(?:具有|取得|拥有)(?:成都大学|我校|本校)?正式学籍的/g,'')
+   .replace(/(?:成都大学|我校|本校)(?=全日制|在校|全体|本科|本[、专]|专科|研究生)/g,'');
+  const protectedMark='\uE000';
+  text=text.replace(/(?:不含|不包括|不包含|不招收|不招|不面向|不接受|不适用|不列入|排除|非)[^；;，,。]{0,20}/g,clause=>clause.replace(/全日制(?:在校)?/g,protectedMark))
+   .replace(/全日制(?:在校)?/g,'').replaceAll(protectedMark,'全日制').replace(/在校(?=本科|本[、专]|专科|研究生)/g,'')
+   .replace(/全体(?:在校)?本科(?:生|学生)/g,'本科生').replace(/本科学生/g,'本科生')
+   .replace(/研究生学生/g,'研究生').replace(/(?:全校学生|全体在校学生|全体在校生)/g,'全体学生')
+   .replace(/^[；;，,。\s]+|[；;，,。\s]+$/g,'').trim();
+  const membersOnly=/^(?:(?:全体|全校|所有|在校|成都大学|我校|本校|本科生|专科生|本科|本专科|本[、，,\/与及和]?专科|专科|高职|高专|研究生|硕士|博士|学生|在校生|师生|教师|教职工)|[、，,\/；;与及和\s])+$/;
+  if(text&&membersOnly.test(text))return conciseAudience(text)||text;
+  return text;
+ }
+ window.ActivityDetails.audience={summary:conciseAudience,detail:audienceDetail};
  const DATE_TOKEN=/(?:20\d{2}\s*[年.\/-]\s*)?\d{1,2}\s*月\s*\d{1,2}\s*[日号]|\d{1,2}\s*月\s*\d{1,2}\s*[日晚]|20\d{2}[-.\/]\d{1,2}[-.\/]\d{1,2}/;
  function fmtDate(raw){const m=String(raw||'').match(/^([0-9]{4})-([0-9]{2})-([0-9]{2})(?:[T ]([0-9]{2}):([0-9]{2}))?/);if(!m)return String(raw||'');return Number(m[1])+'年'+Number(m[2])+'月'+Number(m[3])+'日'+(m[4]?' '+m[4]+':'+m[5]:'')}
  function dateToken(text){const match=String(text||'').match(DATE_TOKEN);return match?match[0].replace(/\s+/g,''):''}
@@ -386,9 +404,10 @@
   const meta=el('div',undefined,'entry-meta');if(version.year)addTag(meta,version.year+' 年','year',String(version.year));const scope=scopeLabel(version,entry);if(scope.label&&!scope.redundant)meta.append(el('span',scope.label,'proof-note'));
   const detailGroups=mergedProfile(version);
   const groupTexts=kind=>(detailGroups.get(kind)?.items||[]).map(i=>i.text);
-  const audienceSourceParts=groupTexts('audience');const audiencePartsRaw=[...new Set(audienceSourceParts.map(conciseAudience).filter(Boolean))],audienceParts=audiencePartsRaw.filter(t=>/(学生|本科生|研究生|专科生|在校|年级|专业|学院|全体|面向|应届)/.test(t)).filter((t,i,all)=>!all.some((other,j)=>j<i&&normKey(other).includes(normKey(t)))).slice(0,2);
-  if(version.audience&&!audienceParts.some(t=>normKey(t).includes(normKey(conciseAudience(version.audience)))||normKey(conciseAudience(version.audience)).includes(normKey(t)))){audienceParts.push(conciseAudience(version.audience));audienceSourceParts.push(version.audience)}
-  const audience=audienceParts.join('；');
+  const audienceSourceParts=[...new Set([...groupTexts('audience'),version.audience].filter(Boolean))];
+  const audience=conciseAudience(version.audience||audienceSourceParts.join('；'));
+  const audienceDetails=[...new Set(audienceSourceParts.map(audienceDetail).filter(Boolean))]
+   .filter((text,i,all)=>!all.some((other,j)=>i!==j&&other.length>text.length&&normKey(other).includes(normKey(text)))).join('；');
   if(show('card_audience')&&audience)a.append(el('p','适合谁 · '+audience,'entry-audience compact-clause'));
   const rawKeyFact=groupTexts('registration')[0]||version.content_profile?.sections?.find(s=>s.kind==='registration')?.items?.[0]?.text||groupTexts('materials')[0]||groupTexts('content')[0]||'';const keyFact=/(参赛者须|选手(?:须|需)|报名者(?:须|需)|须为|必须|应当|需提交|须提交|报名资格|参赛条件|仅限|不得|不具备.*资格|需.{0,6}(提交|加入|填写|报名)|(?:提交|上传|填写|录制|完成).{0,12}(报名|作品|材料|视频|演讲稿|报名表|申请))/.test(rawKeyFact)?'':rawKeyFact;
   if(entry.id==='activity-4b6bd9d295d4')a.append(el('p','外国语学院初选 · 10月22日 19:00 · 2116教室','entry-takeaway compact-clause'));
@@ -396,7 +415,7 @@
   else if(keyFact&&!/^(?:参与|申请|申报|活动|面向)?对象/.test(keyFact)&&!(audience&&normKey(audience).includes(normKey(keyFact).slice(0,10))))a.append(el('p',keyFact,'entry-takeaway compact-clause'));
     if(show('card_dates')){const timing=cardTiming(version,groupTexts);if(timing.deadline)a.append(el('p','报名截止 · '+timing.deadline,'compact-date'));if(timing.event)a.append(el('p','活动时间 · '+timing.event,'compact-date'));if(!timing.deadline&&!timing.event)a.append(el('p',(version.year?version.year+' 年':'历史')+'公告 · 未提取到日期','compact-date'))}
   const d=el('details',undefined,'entry-details');d.append(el('summary','查看详情'+(entry.versions.length>1?' · '+entry.versions.length+' 个公告版本':'')));titleButton.addEventListener('click',()=>{d.open=!d.open});d.addEventListener('toggle',()=>{titleButton.setAttribute('aria-expanded',String(d.open));titleButton.setAttribute('aria-label',displayTitle+(d.open?'：收起详情':'：展开详情'));a.classList.toggle('details-open',d.open);if(d.open)hydrate(entry,version,a)});const body=el('div',undefined,'detail-content');
-  const quickFacts=[];if(audience&&show('audience'))quickFacts.push(['参与对象',audience]);if(show('card_dates')&&version.deadline)quickFacts.push(['原文所列截止',date(version.deadline)]);const materials=groupTexts('materials');if(materials.length)quickFacts.push(['需交材料',materials.join('；')]);
+  const quickFacts=[];if(audienceDetails&&show('audience'))quickFacts.push(['参与对象',audienceDetails]);if(show('card_dates')&&version.deadline)quickFacts.push(['原文所列截止',date(version.deadline)]);const materials=groupTexts('materials');if(materials.length)quickFacts.push(['需交材料',materials.join('；')]);
   if(quickFacts.length){const quick=el('dl',undefined,'detail-quickfacts');for(const [label,value] of quickFacts){quick.append(el('dt',label),el('dd',value))}body.append(quick)}
   body.append(meta);
   if(show('editorial_notes')&&entry.editorial_note)body.append(el('h4','补充说明'),el('p',entry.editorial_note));
@@ -426,7 +445,7 @@
   /* 顶部摘要已完整展示的栏目不再在正文重复画一遍；只补它没写到的条款。 */
   const skip=new Set();
   const covered=new Set();
-  if(audience&&show('audience'))for(const text of (audienceSourceParts.length?audienceSourceParts:[audience])){covered.add(normKey(text));covered.add(looseKey(text))}
+  if(audienceDetails&&show('audience'))for(const text of audienceSourceParts){covered.add(normKey(text));covered.add(looseKey(text))}
   if(materials.length)skip.add('materials');
   activityProfile(body,version,{groups:detailGroups,skip,covered});if(rawKeyFact&&!body.textContent.includes(rawKeyFact)){body.append(el('h4','报名与参与'),el('p',rawKeyFact))}if(entry.collegeSelections?.length){const box=el('div',undefined,'college-selection');box.append(el('h4','学院内部选拔'));for(const item of entry.collegeSelections){const row=el('p',item.text);if(item.url)row.append(' ',link('官方原文',item.url));box.append(row)}body.append(box)}
   evidence(body,entry,version);
