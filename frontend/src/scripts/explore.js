@@ -132,11 +132,9 @@
     const word = card.querySelector('.mini-calendar-top span');
     const grid = card.querySelector('.mini-calendar-grid');
     const backword = document.querySelector('.art-calendar .art-backword');
-    const hand = document.querySelector('.art-calendar .art-hand');
     if (label) label.textContent = String(month);
     if (word) word.textContent = MONTHS_EN[month - 1];
     if (backword) backword.textContent = MONTHS_SHORT[month - 1];
-    if (hand) hand.textContent = CN_NUM[month - 1] + '月 · 先看一眼';
     if (!grid) return;
     const firstWeekday = new Date(Date.UTC(year, month - 1, 1)).getUTCDay(); // 周日 0
     const offset = (firstWeekday + 6) % 7; // 周一为一周起点
