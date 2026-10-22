@@ -12,6 +12,7 @@
 """
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
@@ -26,6 +27,22 @@ from .models import (Activity, ActivityGroup, CampusService, Fact, Guide, Notice
                      Taxonomy)
 
 # ---------------------------------------------------------------- 时间与状态
+
+
+
+PUBLIC_PHONE = re.compile(r'(?<![0-9A-Za-z@])1[3-9]\d{9}(?![0-9A-Za-z@])')
+PUBLIC_ID = re.compile(r'(?<![0-9A-Za-z])\d{17}[\dXx](?![0-9A-Za-z])')
+PUBLIC_QQ = re.compile(r'(?:QQ群|群号|QQ)\s*[:：]?\s*\d{5,12}', re.I)
+PUBLIC_NAME = re.compile(r'((?:联系人|联系人姓名|负责人|队长|组长)\s*[:：]\s*)([一-鿿]{2,4})(?=$|[，,。；;、\s（(])')
+
+
+def redact_public(value: str) -> str:
+    text = str(value or '')
+    text = PUBLIC_PHONE.sub('〔手机号已隐去〕', text)
+    text = PUBLIC_ID.sub('〔身份证号已隐去〕', text)
+    text = PUBLIC_QQ.sub(lambda m: re.sub(r'\d{5,12}', '〔群号已隐去〕', m.group()), text)
+    text = PUBLIC_NAME.sub(lambda m: m.group(1) + '〔姓名已隐去〕', text)
+    return text
 
 CN_TZ = timezone.get_current_timezone()
 
@@ -61,41 +78,74 @@ def end_time(notice: Notice) -> datetime | None:
     return timezone.make_aware(value, CN_TZ)
 
 
+def date_status(notice: Notice, field: str) -> str | None:
+    """confirmed / unverified / conflict；缺省视为已确认（供旧记录兼容）。"""
+    extras = notice.extras or {}
+    status = extras.get(f'{field}_status')
+    if status in ('confirmed', 'unverified', 'conflict'):
+        return status
+    value = notice.deadline if field == 'deadline' else (notice.stage_start or notice.stage_end)
+    return 'confirmed' if value else None
+
+
+DEADLINE_LABELS = {
+    'registration': ('报名截止前', '今日报名截止', '报名已截止'),
+    'submission': ('作品提交截止前', '今日作品提交截止', '交作品已截止'),
+    'combined': ('报名及作品截止前', '今日报名及作品截止', '报名及作品已截止'),
+    'notice': ('学院汇总/推荐前', '今日学院汇总/推荐', '学院汇总/推荐已过'),
+}
+
+DEADLINE_EVENT_LABELS = {
+    'registration': '报名截止',
+    'submission': '作品提交截止',
+    'combined': '报名及作品提交截止',
+    'notice': '学院汇总/推荐节点',
+}
+
+
 def phase(notice: Notice, kind: str = 'notice') -> dict:
     if kind == 'reference':
         return {'id': 'reference', 'label': '参考资料', 'tone': 'muted'}
+    deadline_status = date_status(notice, 'deadline')
+    stage_status = date_status(notice, 'stage')
+    if deadline_status == 'conflict' or stage_status == 'conflict':
+        return {'id': 'unknown', 'label': '日期有差异', 'tone': 'warning'}
     if notice.conflict:
         return {'id': 'unknown', 'label': '版本有差异', 'tone': 'warning'}
     now = china_now()
     day = now.date().isoformat()
-    start = notice.stage_start.isoformat() if notice.stage_start else ''
-    end = notice.stage_end.isoformat() if notice.stage_end else ''
+    start = notice.stage_start.isoformat() if notice.stage_start and stage_status == 'confirmed' else ''
+    end = notice.stage_end.isoformat() if notice.stage_end and stage_status == 'confirmed' else ''
     if start and end and start <= day <= end:
         return {'id': 'scheduled', 'label': '通知所列活动期', 'tone': 'active'}
-    cutoff = end_time(notice)
+    cutoff = end_time(notice) if deadline_status == 'confirmed' else None
+    before, today_label, passed = DEADLINE_LABELS.get(
+        notice.deadline_kind or '', ('所列截止前', '今日截止', '所列截止已过'))
     if cutoff:
         if cutoff >= now:
             today = cutoff.date().isoformat() == day
             return {'id': 'today' if today else 'before_deadline',
-                    'label': '今日截止' if today else '所列截止前', 'tone': 'active'}
+                    'label': today_label if today else before, 'tone': 'active'}
         if (end and end < day) or (not end and start and start < day):
             return {'id': 'past', 'label': '所列日期已过', 'tone': 'muted'}
-        labels = {'submission': '交作品已截止', 'combined': '报名及作品已截止',
-                  'notice': '所列截止已过'}
-        return {'id': 'deadline_passed', 'label': labels.get(notice.deadline_kind, '报名已截止'),
-                'tone': 'warning'}
+        return {'id': 'deadline_passed', 'label': passed, 'tone': 'warning'}
     if start and start > day:
         return {'id': 'upcoming', 'label': '活动日期未到', 'tone': 'muted'}
     if start == day:
         return {'id': 'scheduled', 'label': '通知所列活动日', 'tone': 'active'}
     if start and start < day:
         return {'id': 'past', 'label': '所列起始日已过', 'tone': 'muted'}
-    return {'id': 'unknown', 'label': f'{notice.year} 年公告' if notice.year else '历史公告', 'tone': 'muted'}
+    unverified = deadline_status == 'unverified' or stage_status == 'unverified'
+    label = (f'{notice.year} 年公告 · 日期待核实' if notice.year else '历史公告 · 日期待核实') if unverified \
+        else (f'{notice.year} 年公告' if notice.year else '历史公告')
+    return {'id': 'unknown', 'label': label, 'tone': 'muted'}
 
 
 def registration_open(notice: Notice) -> bool:
-    """报名是否仍开放：有明确窗口用窗口，否则退回公告自带的报名/提交截止。"""
+    """当前报名/作品提交：只认有依据的学生节点，学院汇总/推荐节点不纳入。"""
     if notice.conflict:
+        return False
+    if date_status(notice, 'deadline') in ('unverified', 'conflict'):
         return False
     today = china_now().date().isoformat()
     windows = [] if participation.curated(notice) else (notice.extras or {}).get('registration_windows') or []
@@ -106,7 +156,7 @@ def registration_open(notice: Notice) -> bool:
         return inside and (cutoff is None or cutoff >= china_now())
     if not notice.deadline:
         return False
-    if notice.deadline_kind == 'event':
+    if notice.deadline_kind not in ('registration', 'combined', 'submission'):
         return False
     return end_time(notice) >= china_now()
 
@@ -115,8 +165,12 @@ def timing_range(notice: Notice, basis: str = 'event') -> tuple[str, str] | None
     if notice.conflict:
         return None
     if basis == 'deadline':
+        if date_status(notice, 'deadline') != 'confirmed':
+            return None
         day = notice.deadline.date().isoformat() if notice.deadline else None
         return (day, day) if day else None
+    if date_status(notice, 'stage') != 'confirmed':
+        return None
     start = notice.stage_start.isoformat() if notice.stage_start else None
     end = notice.stage_end.isoformat() if notice.stage_end else None
     if not start:
@@ -363,9 +417,10 @@ def load_cards(public_only: bool = True, activity_ids=None, group_ids=None) -> l
     for notice in notices:
         by_card.setdefault(notice.display_activity_id or notice.activity_id, []).append(notice)
 
-    groups = (ActivityGroup.objects.filter(visibility='public')
-              .select_related('activity', 'activity__category')
-              .prefetch_related('notices'))
+    all_groups = (ActivityGroup.objects.filter(visibility='public')
+                  .prefetch_related('notices'))
+    all_grouped_ids = {n.id for group in all_groups for n in group.notices.all()}
+    groups = all_groups
     if group_ids is not None:
         groups = groups.filter(id__in=group_ids)
     grouped_ids: set[str] = set()
@@ -382,7 +437,7 @@ def load_cards(public_only: bool = True, activity_ids=None, group_ids=None) -> l
     if activity_ids is not None:
         activities = activities.filter(id__in=activity_ids)
     for activity in activities:
-        own = [n for n in by_card.get(activity.id, []) if n.id not in grouped_ids]
+        own = [n for n in by_card.get(activity.id, []) if n.id not in all_grouped_ids]
         rows.append(CardRow(Card('activity', activity.id, activity, None), latest_notice_versions(own)))
     return [row for row in rows if row.notices]
 
@@ -398,6 +453,8 @@ FACT_FIELDS = ('kind', 'label', 'value', 'quote', 'locator', 'source_url', 'basi
 
 def _fact_payload(fact: Fact) -> dict:
     data = {key: getattr(fact, key) for key in FACT_FIELDS}
+    data['value'] = redact_public(data['value'])
+    data['quote'] = redact_public(data['quote'])
     data['label'] = fact.label or (fact.extras or {}).get('label', '')
     return data
 
@@ -411,6 +468,15 @@ def preview_facts(notice):
              'basis':'editorial'} for section in sections for item in section['items']][:12]
 
 
+def _redact_profile(payload: dict) -> dict:
+    copied = json.loads(json.dumps(payload or {}, ensure_ascii=False))
+    for section in copied.get('sections', []):
+        for item in section.get('items', []):
+            if isinstance(item.get('text'), str):
+                item['text'] = redact_public(item['text'])
+    return copied
+
+
 def serialize_notice(notice: Notice, detail: bool = False) -> dict:
     """detail=True 给全部事实与完整画像；detail=False 只给列表需要的字段。"""
     extras = notice.extras or {}
@@ -421,13 +487,18 @@ def serialize_notice(notice: Notice, detail: bool = False) -> dict:
         'published': notice.published.isoformat() if notice.published else None,
         'deadline': notice.deadline.isoformat() if notice.deadline else None,
         'deadline_kind': notice.deadline_kind or None,
+        'deadline_precision': extras.get('deadline_precision') or None,
+        'deadline_status': date_status(notice, 'deadline'),
+        'deadline_note': redact_public(extras.get('deadline_note') or ''),
+        'stage_status': date_status(notice, 'stage'),
+        'stage_note': redact_public(extras.get('stage_note') or ''),
         'stage_start': notice.stage_start.isoformat() if notice.stage_start else None,
         'stage_end': notice.stage_end.isoformat() if notice.stage_end else None,
         'colleges': [t.code for t in notice.taxonomies.all() if t.kind == 'college'],
         'levels': [t.code for t in notice.taxonomies.all() if t.kind == 'level'],
         'college_role': extras.get('college_role', ''),
         'level_basis': extras.get('level_basis', ''),
-        'audience': notice.audience or '',
+        'audience': redact_public(notice.audience or ''),
         'audience_scope': extras.get('audience_scope') or {},
         'source_url': notice.source.url if notice.source_id else '',
         'conflict': bool(notice.conflict),
@@ -443,7 +514,7 @@ def serialize_notice(notice: Notice, detail: bool = False) -> dict:
         data['fact_count']=sum(len(section['items']) for section in curated_sections)
     elif detail:
         profile = getattr(notice, 'profile', None)
-        data['content_profile'] = profile.payload if profile else {'sections': []}
+        data['content_profile'] = _redact_profile(profile.payload if profile else {'sections': []})
         data['participation_facts'] = [_fact_payload(f) for f in notice.facts.all()]
         data['fact_count'] = len(data['participation_facts'])
     else:
@@ -451,6 +522,15 @@ def serialize_notice(notice: Notice, detail: bool = False) -> dict:
         coverage = (profile.payload or {}).get('coverage', {}) if profile else {}
         data['content_profile'] = {'sections': [], 'coverage': coverage, 'truncated': True}
         data['participation_facts'] = []
+    if detail:
+        for field in ('deadline', 'stage'):
+            evidence = extras.get(f'{field}_evidence')
+            if isinstance(evidence, dict):
+                evidence = dict(evidence)
+                evidence['quote'] = redact_public(evidence.get('quote') or '')
+                data[f'{field}_evidence'] = evidence
+            else:
+                data[f'{field}_evidence'] = None
     return data
 
 
@@ -496,8 +576,8 @@ def serialize_entry(card: Card | Activity, notices: list[Notice] | None = None) 
             'kind': 'notice',
             'category': card.activity.category.code if card.activity.category_id else '',
             'category_label': label,
-            'summary': card.group.title,
-            'tags': card.group.tags or [label, '官方公告'],
+            'summary': redact_public(card.group.title),
+            'tags': [redact_public(str(tag)) for tag in (card.group.tags or [label, '官方公告'])],
             'editorial_note': '',
             'featured': card.activity.featured,
             'spotlight': False,
@@ -512,9 +592,9 @@ def serialize_entry(card: Card | Activity, notices: list[Notice] | None = None) 
         'kind': activity.kind,
         'category': activity.category.code if activity.category_id else extras.get('category', ''),
         'category_label': activity.category_label,
-        'summary': activity.summary or extras.get('summary', ''),
-        'tags': activity.tags or extras.get('tags', []),
-        'editorial_note': activity.editorial_note,
+        'summary': redact_public(activity.summary or extras.get('summary', '')),
+        'tags': [redact_public(str(tag)) for tag in (activity.tags or extras.get('tags', []))],
+        'editorial_note': redact_public(activity.editorial_note),
         'featured': activity.featured,
         'spotlight': activity.spotlight,
         'material_ids': activity.material_ids or [],
@@ -765,8 +845,12 @@ def decorate(row: CardRow, filters: Filters) -> dict:
     entry['published'] = version.get('published')
     entry['deadline'] = version.get('deadline')
     entry['deadline_kind'] = version.get('deadline_kind')
+    entry['deadline_status'] = version.get('deadline_status')
+    entry['deadline_note'] = version.get('deadline_note')
     entry['stage_start'] = version.get('stage_start')
     entry['stage_end'] = version.get('stage_end')
+    entry['stage_status'] = version.get('stage_status')
+    entry['stage_note'] = version.get('stage_note')
     entry['source_url'] = version.get('source_url')
     entry['version_count'] = len(entry['versions'])
     entry['selected_source_url'] = version.get('source_url')
@@ -898,18 +982,21 @@ def calendar_annual(month: int) -> dict:
                 continue
             full = notices.get(notice.id, notice)
             signals = []
-            deadline_day = full.deadline.date().isoformat() if full.deadline else None
+            deadline_day = full.deadline.date().isoformat() if full.deadline and date_status(full, 'deadline') == 'confirmed' else None
             if deadline_day and int(deadline_day[5:7]) == month:
-                signals.append({'kind': 'deadline', 'text': '报名或提交截止',
+                signals.append({'kind': 'deadline',
+                                'text': DEADLINE_EVENT_LABELS.get(full.deadline_kind or '', '所列截止'),
+                                'deadline_kind': full.deadline_kind or None,
+                                'deadline_status': 'confirmed',
                                 'raw': full.deadline.isoformat(), 'start': deadline_day, 'end': deadline_day})
-            stage_day = full.stage_start.isoformat() if full.stage_start else None
+            stage_day = full.stage_start.isoformat() if full.stage_start and date_status(full, 'stage') == 'confirmed' else None
             if stage_day and int(stage_day[5:7]) == month:
                 stage_end = full.stage_end.isoformat() if full.stage_end else stage_day
-                signals.append({'kind': 'event', 'text': '活动阶段', 'raw': stage_day,
-                                'start': stage_day, 'end': stage_end})
+                signals.append({'kind': 'event', 'text': '活动阶段', 'stage_status': 'confirmed',
+                                'raw': stage_day, 'start': stage_day, 'end': stage_end})
             editorial=participation.curated(full)
             clues=([('schedule',line) for line in editorial.get('fields',{}).get('event_time','').splitlines()]
-                   if editorial else [(fact.kind,fact.value) for fact in full.facts.all()])
+                   if editorial else [(fact.kind, redact_public(fact.value)) for fact in full.facts.all()])
             for kind,value in clues:
                 if not timing_clue(kind, value):
                     continue
@@ -929,8 +1016,9 @@ def calendar_annual(month: int) -> dict:
                      'group_of': row.card.activity.id if row.card.is_group else None}
             records.append({'entry': light, 'versions': [{
                 'version': {key: value for key, value in serialize_notice(item['version']).items()
-                            if key in ('year', 'published', 'deadline', 'deadline_kind', 'stage_start',
-                                       'stage_end', 'source_url', 'levels', 'colleges',
+                            if key in ('year', 'published', 'deadline', 'deadline_kind',
+                                       'deadline_status', 'deadline_note', 'stage_start', 'stage_end',
+                                       'stage_status', 'stage_note', 'source_url', 'levels', 'colleges',
                                        'edition_label', 'audience')},
                 'signals': item['signals']} for item in versions]})
     records.sort(key=lambda r: (not r['entry'].get('spotlight'), -len(r['versions']), r['entry']['title']))
@@ -955,11 +1043,13 @@ def actual_counts(year: int) -> dict:
         for notice in row.notices:
             if notice.conflict:
                 continue
-            if notice.deadline and notice.deadline.year == year:
+            deadline_status = date_status(notice, 'deadline')
+            stage_status = date_status(notice, 'stage')
+            if notice.deadline and deadline_status == 'confirmed' and notice.deadline.year == year:
                 counts[f'{notice.deadline.month:02d}'] += 1
-            if notice.stage_start and notice.stage_start.year == year:
+            if notice.stage_start and stage_status == 'confirmed' and notice.stage_start.year == year:
                 counts[f'{notice.stage_start.month:02d}'] += 1
-            if (notice.stage_end and notice.stage_end.year == year
+            if (notice.stage_end and stage_status == 'confirmed' and notice.stage_end.year == year
                     and notice.stage_end != notice.stage_start):
                 counts[f'{notice.stage_end.month:02d}'] += 1
     return counts
@@ -978,24 +1068,28 @@ def calendar_actual(year: int, month: int) -> dict:
                 'colleges': [t.code for t in notice.taxonomies.all() if t.kind == 'college'],
                 'featured': row.card.activity.featured,
             }
-            if notice.deadline and (notice.deadline.year, notice.deadline.month) == (year, month):
+            deadline_status = date_status(notice, 'deadline')
+            stage_status = date_status(notice, 'stage')
+            if (notice.deadline and deadline_status == 'confirmed'
+                    and (notice.deadline.year, notice.deadline.month) == (year, month)):
                 events.append({
                     **event_meta,
                     'entry_id': row.card.id, 'title': row.card.title,
                     'category': (row.card.activity.category.code if row.card.activity.category_id else ''),
                     'category_label': row.card.activity.category_label,
                     'kind': 'deadline',
-                    'label': '作品提交截止' if notice.deadline_kind == 'submission'
-                    else '报名及作品截止' if notice.deadline_kind == 'combined'
-                    else '截止' if notice.deadline_kind == 'notice' else '报名截止',
+                    'label': DEADLINE_EVENT_LABELS.get(notice.deadline_kind or '', '所列截止'),
+                    'deadline_kind': notice.deadline_kind or None,
+                    'deadline_status': 'confirmed',
                     'start': notice.deadline.date().isoformat(),
                     'end': notice.deadline.date().isoformat(),
+                    'precision': (notice.extras or {}).get('deadline_precision') or None,
                     'raw': notice.deadline.isoformat(),
                     'source_url': notice.source.url if notice.source_id else '',
                 })
             start = notice.stage_start.isoformat() if notice.stage_start else None
             end = notice.stage_end.isoformat() if notice.stage_end else None
-            if start or end:
+            if stage_status == 'confirmed' and (start or end):
                 if start and end and end < start:
                     continue
                 begin = start or end
@@ -1008,6 +1102,7 @@ def calendar_actual(year: int, month: int) -> dict:
                         'category_label': row.card.activity.category_label,
                         'kind': 'event',
                         'label': '活动阶段' if start else '活动阶段结束',
+                        'stage_status': 'confirmed',
                         'start': begin, 'end': finish,
                         'only': None if start and end else ('start' if start else 'end'),
                         'raw': start or end,

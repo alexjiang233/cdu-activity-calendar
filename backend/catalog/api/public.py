@@ -9,6 +9,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 
 from .. import services
+from ..services import redact_public
 from ..models import Activity, ActivityGroup
 
 MAX_PAGE_SIZE = settings.PUBLIC_MAX_PAGE_SIZE
@@ -52,6 +53,8 @@ def _clean(payload):
         return {k: _clean(v) for k, v in payload.items() if not k.startswith('_')}
     if isinstance(payload, list):
         return [_clean(item) for item in payload]
+    if isinstance(payload, str):
+        return redact_public(payload)
     return payload
 
 

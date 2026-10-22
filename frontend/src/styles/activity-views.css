@@ -96,3 +96,59 @@
 .about-story-body p:last-child{margin-bottom:0}
 .about-story-body strong{color:#6b1723;font-variant-numeric:tabular-nums}
 @media(max-width:700px){.about-manuscript>section{grid-template-columns:1fr;gap:14px;padding:25px 0}.about-manuscript>section>h2{font-size:23px}.about-story-body p{font-size:15px;line-height:1.95}}
+/* 2026-10-22: shared interior rhythm, compact discovery and unobstructed tools. */
+:is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading{min-height:218px;padding:8px 0 18px;margin-bottom:18px;--page-title-size:clamp(34px,3.8vw,52px);--page-kicker-size:11px;--page-deck-size:15px}
+:is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading .editorial-kicker{margin-bottom:12px}
+:is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading .editorial-heading-copy>p:not(.editorial-kicker){margin-top:12px;line-height:1.65}
+:is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading .page-art{height:218px;scale:.8;transform-origin:center}
+#query-page .explore-controls{display:grid;grid-template-columns:minmax(240px,.85fr) minmax(0,1.4fr);gap:14px 24px;padding-block:18px}
+#query-page .college-preference{margin:0;align-self:start}
+#query-page .college-preference label{font-size:14px}
+#college-hint{font-size:12px;margin:6px 0 0}
+#query-page .searchbox{margin:0;min-width:0;align-self:start}
+#query-page .explore-filterbar{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+#query-page .quick-filter-panel{border:1px solid var(--line);border-radius:12px;min-width:0;background:#fffaf4}
+#query-page .quick-filter-panel>summary{display:flex;align-items:center;gap:14px;padding:12px 16px;cursor:pointer;font-size:14px;font-weight:650;list-style:none}
+#query-page .quick-filter-panel>summary::-webkit-details-marker{display:none}
+#query-page .quick-filter-panel>summary:after{content:'+';margin-left:auto;font-size:20px;font-weight:400}
+#query-page .quick-filter-panel[open]>summary:after{content:'−'}
+#query-page .quick-filter-panel>summary span{font-weight:400;color:#855f60;overflow-wrap:anywhere}
+#query-page .quick-filter-body{border-top:1px solid var(--line);padding:14px 16px}
+#query-page .month-heading,#query-page .type-heading{margin:0 0 10px}
+#query-page .month-heading h2,#query-page .type-heading h2{font-size:16px}
+#query-page .month-tabs,#query-page .category-tabs{display:flex;flex-wrap:wrap;gap:6px;overflow:visible;margin:0;padding:0}
+#query-page .month-tabs button,#query-page .category-tabs button{font-size:13px;padding:7px 10px;min-height:36px;flex:0 0 auto}
+#query-page .month-help{margin:10px 0 0;font-size:12px}
+#query-page .filter-toolbar{grid-column:1/-1;margin:0}
+#query-page .result-heading{margin-top:12px}
+#query-page .activity-card{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.45fr);gap:12px 28px;padding:24px 0}
+#query-page .activity-card-main{min-width:0}
+#query-page .activity-card-main h3{margin:12px 0;font-size:clamp(20px,1.7vw,25px)}
+#query-page .activity-card-facts{align-self:center;border-left:1px solid var(--line);padding-left:22px;font-size:14px;min-width:0}
+#query-page .activity-card-facts p{font-size:14px;line-height:1.7;margin:6px 0;overflow-wrap:anywhere}
+#query-page .activity-card>.entry-details{grid-column:1/-1;margin-top:0}
+#query-page .activity-card.without-facts{grid-template-columns:1fr}
+#results[aria-busy=true] #catalog-list{opacity:.4;pointer-events:none}
+#catalog-list{transition:opacity .2s ease}
+#query-page .scope-tag,#query-page .category-tag{font-size:12px}
+.fab-stack .rail-tip{position:static;opacity:1;transform:none;pointer-events:none;white-space:nowrap;background:none;box-shadow:none;color:inherit;font-size:12px}
+@media(max-width:1431px){
+ body[data-page=query]{padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+ .fab-stack[data-show=true]{display:flex;flex-direction:row;justify-content:center;right:0;left:0;bottom:0;padding:8px 16px calc(8px + env(safe-area-inset-bottom,0px));gap:12px;background:#fbf6f1f5;border-top:1px solid #d9c5c1;backdrop-filter:blur(12px)}
+ .fab-stack button{position:relative;display:flex;align-items:center;justify-content:center;gap:8px;width:auto;height:40px;padding:0 18px;border-radius:10px;box-shadow:none}
+ .fab-stack button svg{width:17px;height:17px;flex:none}
+}
+@media(max-width:700px){
+ :is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading{min-height:0;padding:6px 0 18px;--page-title-size:34px;--page-kicker-size:10px;--page-deck-size:14px}
+ :is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading .page-art{height:140px;scale:.62}
+ #query-page .explore-controls{grid-template-columns:1fr;gap:12px;padding-block:14px}
+ #query-page .explore-filterbar{gap:8px}
+ #query-page .quick-filter-panel>summary{padding:11px 10px;gap:7px;font-size:13px}
+ #query-page .quick-filter-panel[open]{grid-column:1/-1;grid-row:1}
+ #query-page .quick-filter-panel[open]~.quick-filter-panel{grid-column:1/-1}
+ #query-page .activity-card{grid-template-columns:1fr;gap:8px;padding:20px 0}
+ #query-page .activity-card-main h3{font-size:21px;line-height:1.5}
+ #query-page .activity-card-facts{border-left:0;padding:0}
+ #query-page .activity-card-facts p{margin:3px 0;font-size:13px}
+}
+@media(prefers-reduced-motion:reduce){#catalog-list{transition:none}}

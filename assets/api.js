@@ -6,7 +6,7 @@ window.CduProjection = window.CduProjection || {
 
 window.CduApi = (() => {
   'use strict';
-  const REVISION = 'rev-static-20261022-3a4722a186';
+  const REVISION = 'rev-static-20261022-97ccc0168a';
   const FIXED_NOW = (() => {
     try {
       const raw = globalThis.CDU_STATIC_NOW;
@@ -144,39 +144,66 @@ window.CduApi = (() => {
     return Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), hour, minute, second) - 8 * 3600000;
   }
 
+  function dateStatus(version, field) {
+    const status = version[`${field}_status`];
+    if (['confirmed', 'unverified', 'conflict'].includes(status)) return status;
+    return version[field] ? 'confirmed' : null;
+  }
+
+  const DEADLINE_LABELS = {
+    registration: ['报名截止前', '今日报名截止', '报名已截止'],
+    submission: ['作品提交截止前', '今日作品提交截止', '交作品已截止'],
+    combined: ['报名及作品截止前', '今日报名及作品截止', '报名及作品已截止'],
+    notice: ['学院汇总/推荐前', '今日学院汇总/推荐', '学院汇总/推荐已过'],
+  };
+  const DEADLINE_EVENT_LABELS = {
+    registration: '报名截止',
+    submission: '作品提交截止',
+    combined: '报名及作品提交截止',
+    notice: '学院汇总/推荐节点',
+  };
+
   function phase(version) {
+    const deadlineStatus = dateStatus(version, 'deadline');
+    const stageStatus = dateStatus(version, 'stage');
+    if (deadlineStatus === 'conflict' || stageStatus === 'conflict') {
+      return { id: 'unknown', label: '日期有差异', tone: 'warning' };
+    }
     if (version.conflict) return { id: 'unknown', label: '版本有差异', tone: 'warning' };
     const now = nowMs();
     const day = chinaDay(now);
-    const start = dayPart(version.stage_start);
-    const end = dayPart(version.stage_end);
+    const start = stageStatus === 'confirmed' ? dayPart(version.stage_start) : '';
+    const end = stageStatus === 'confirmed' ? dayPart(version.stage_end) : '';
     if (start && end && start <= day && day <= end) {
       return { id: 'scheduled', label: '通知所列活动期', tone: 'active' };
     }
-    const cutoff = deadlineMs(version.deadline);
+    const cutoff = deadlineStatus === 'confirmed' ? deadlineMs(version.deadline) : null;
+    const labels = DEADLINE_LABELS[version.deadline_kind] || ['所列截止前', '今日截止', '所列截止已过'];
     if (cutoff !== null) {
       if (cutoff >= now) {
         const today = chinaDay(cutoff) === day;
         return {
           id: today ? 'today' : 'before_deadline',
-          label: today ? '今日截止' : '所列截止前',
+          label: today ? labels[1] : labels[0],
           tone: 'active',
         };
       }
       if ((end && end < day) || (!end && start && start < day)) {
         return { id: 'past', label: '所列日期已过', tone: 'muted' };
       }
-      const labels = {
-        submission: '交作品已截止',
-        combined: '报名及作品已截止',
-        notice: '所列截止已过',
-      };
-      return { id: 'deadline_passed', label: labels[version.deadline_kind] || '报名已截止', tone: 'warning' };
+      return { id: 'deadline_passed', label: labels[2], tone: 'warning' };
     }
     if (start && start > day) return { id: 'upcoming', label: '活动日期未到', tone: 'muted' };
     if (start && start === day) return { id: 'scheduled', label: '通知所列活动日', tone: 'active' };
     if (start && start < day) return { id: 'past', label: '所列起始日已过', tone: 'muted' };
-    return { id: 'unknown', label: version.year ? `${version.year} 年公告` : '历史公告', tone: 'muted' };
+    const unverified = deadlineStatus === 'unverified' || stageStatus === 'unverified';
+    return {
+      id: 'unknown',
+      label: version.year
+        ? `${version.year} 年公告${unverified ? ' · 日期待核实' : ''}`
+        : `历史公告${unverified ? ' · 日期待核实' : ''}`,
+      tone: 'muted',
+    };
   }
 
   function relevant(version, college) {
@@ -188,6 +215,7 @@ window.CduApi = (() => {
 
   function registrationOpen(version) {
     if (version.conflict) return false;
+    if (dateStatus(version, 'deadline') !== 'confirmed') return false;
     const now = nowMs();
     const today = chinaDay(now);
     const windows = (version.registration_windows || []).filter((item) => item && item.start && item.end);
@@ -196,7 +224,7 @@ window.CduApi = (() => {
         (!version.deadline || deadlineMs(version.deadline) >= now);
     }
     if (!version.deadline) return false;
-    if (version.deadline_kind === 'event') return false;
+    if (!['registration', 'combined', 'submission'].includes(version.deadline_kind)) return false;
     const cutoff = deadlineMs(version.deadline);
     return cutoff !== null && cutoff >= now;
   }
@@ -204,9 +232,11 @@ window.CduApi = (() => {
   function timingMonths(version, basis) {
     if (version.conflict) return [];
     if (basis === 'deadline') {
+      if (dateStatus(version, 'deadline') !== 'confirmed') return [];
       const day = dayPart(version.deadline);
       return day ? [Number(day.slice(5, 7))] : [];
     }
+    if (dateStatus(version, 'stage') !== 'confirmed') return [];
     const start = dayPart(version.stage_start);
     const end = dayPart(version.stage_end);
     if (!start) return [];
@@ -352,17 +382,19 @@ window.CduApi = (() => {
     return true;
   }
 
-  /* 复刻 services._sql_scope：候选范围按“原归属通知”收窄，之后才做精确筛选。 */
+  /* 复刻 services._sql_scope：候选范围按“通知原始归属活动”收窄，之后才做精确筛选。
+     候选元数据包含未被投影成卡片版本的公开通知，和 backend 的 SQL 预筛保持一致。 */
   function scopeCandidates(index, filters) {
     const noticeLevel = Boolean(filters.year || filters.college || filters.level) ||
       Boolean(filters.month && filters.month_basis === 'seasonal');
     const q = String(filters.q || '').trim().toLowerCase();
     if (!(noticeLevel || q || filters.category)) return null;
+    const scopeNotices = (index.scope && index.scope.notices) || index.notices || {};
 
     let noticeIds = null;
     if (noticeLevel) {
       noticeIds = new Set();
-      for (const [noticeId, meta] of Object.entries(index.notices || {})) {
+      for (const [noticeId, meta] of Object.entries(scopeNotices)) {
         if (noticeScopeMatch(meta, filters)) noticeIds.add(noticeId);
       }
     }
@@ -374,7 +406,7 @@ window.CduApi = (() => {
       if (categorySet && !categorySet.has(activity.category)) continue;
       if (noticeIds && !activity.notice_ids.some((id) => noticeIds.has(id))) continue;
       if (q && !String(activity.search || '').toLowerCase().includes(q) &&
-        !activity.notice_ids.some((id) => String(((index.notices || {})[id] || {}).search || '').toLowerCase().includes(q))) {
+        !activity.notice_ids.some((id) => String((scopeNotices[id] || {}).search || '').toLowerCase().includes(q))) {
         continue;
       }
       activityIds.add(activity.id);
@@ -383,7 +415,7 @@ window.CduApi = (() => {
     for (const group of (index.scope && index.scope.groups) || []) {
       if (noticeIds && !group.notice_ids.some((id) => noticeIds.has(id))) continue;
       if (q && !String(group.title || '').toLowerCase().includes(q) &&
-        !group.notice_ids.some((id) => String(((index.notices || {})[id] || {}).search || '').toLowerCase().includes(q))) {
+        !group.notice_ids.some((id) => String((scopeNotices[id] || {}).search || '').toLowerCase().includes(q))) {
         continue;
       }
       groupIds.add(group.id);
@@ -411,8 +443,12 @@ window.CduApi = (() => {
     entry.published = target.published;
     entry.deadline = target.deadline;
     entry.deadline_kind = target.deadline_kind;
+    entry.deadline_status = target.deadline_status;
+    entry.deadline_note = target.deadline_note;
     entry.stage_start = target.stage_start;
     entry.stage_end = target.stage_end;
+    entry.stage_status = target.stage_status;
+    entry.stage_note = target.stage_note;
     entry.source_url = target.source_url;
     entry.version_count = entry.versions.length;
     entry.selected_source_url = target.source_url;
@@ -487,6 +523,10 @@ window.CduApi = (() => {
   /* 复刻 services.load_cards(activity_ids, group_ids) 的分页/筛选时通知装配。 */
   function scopedLoadCards(index, activityIds, groupIds) {
     const cache = cacheFor(index);
+    const allGrouped = new Set();
+    for (const group of (index.scope && index.scope.groups) || []) {
+      for (const noticeId of group.notice_ids || []) allGrouped.add(noticeId);
+    }
     const groupedIds = new Set();
     for (const groupId of groupIds) {
       const group = cache.groupsById.get(groupId);
@@ -500,16 +540,16 @@ window.CduApi = (() => {
       const noticeIds = (group.notice_ids || [])
         .filter((noticeId) => Boolean(index.notices[noticeId]))
         .sort((left, right) => noticeOrder(index, left, right));
-      if (noticeIds.length) groupCards.push(scopedCard(base, noticeIds, index));
+      if (noticeIds.length) groupCards.push(baseCard(index, base));
     }
     const activityCards = [];
     for (const activityId of activityIds) {
       const base = cache.byId.get(activityId);
       if (!base || base.kind !== 'activity') continue;
       const noticeIds = (cache.keyed.get(activityId) || [])
-        .filter((noticeId) => !groupedIds.has(noticeId))
+        .filter((noticeId) => !groupedIds.has(noticeId) && !allGrouped.has(noticeId))
         .sort((left, right) => noticeOrder(index, left, right));
-      if (noticeIds.length) activityCards.push(scopedCard(base, noticeIds, index));
+      if (noticeIds.length) activityCards.push(baseCard(index, base));
     }
     return groupCards.concat(activityCards);
   }
@@ -604,15 +644,15 @@ window.CduApi = (() => {
     for (const card of index.cards || []) {
       for (const version of card.entry.versions || []) {
         if (version.conflict) continue;
-        const deadline = dayPart(version.deadline);
+        const deadline = dateStatus(version, 'deadline') === 'confirmed' ? dayPart(version.deadline) : '';
         if (deadline && Number(deadline.slice(0, 4)) === year) {
           counts[deadline.slice(5, 7)] += 1;
         }
-        const start = dayPart(version.stage_start);
+        const start = dateStatus(version, 'stage') === 'confirmed' ? dayPart(version.stage_start) : '';
         if (start && Number(start.slice(0, 4)) === year) {
           counts[start.slice(5, 7)] += 1;
         }
-        const end = dayPart(version.stage_end);
+        const end = dateStatus(version, 'stage') === 'confirmed' ? dayPart(version.stage_end) : '';
         if (end && end !== start && Number(end.slice(0, 4)) === year) {
           counts[end.slice(5, 7)] += 1;
         }
@@ -630,7 +670,7 @@ window.CduApi = (() => {
         if (version.conflict) continue;
         const eventMeta = {notice_id:version.notice_id, year:version.year,
           published:version.published, colleges:version.colleges||[], featured:entry.featured===true};
-        const deadline = dayPart(version.deadline);
+        const deadline = dateStatus(version, 'deadline') === 'confirmed' ? dayPart(version.deadline) : '';
         if (deadline && deadline.slice(0, 7) === target) {
           events.push({
             ...eventMeta,
@@ -639,17 +679,19 @@ window.CduApi = (() => {
             category: entry.category,
             category_label: entry.category_label,
             kind: 'deadline',
-            label: version.deadline_kind === 'submission' ? '作品提交截止'
-              : version.deadline_kind === 'combined' ? '报名及作品截止'
-                : version.deadline_kind === 'notice' ? '截止' : '报名截止',
+            label: DEADLINE_EVENT_LABELS[version.deadline_kind] || '所列截止',
+            deadline_kind: version.deadline_kind || null,
+            deadline_status: 'confirmed',
             start: deadline,
             end: deadline,
+            precision: version.deadline_precision || null,
             raw: version.deadline,
             source_url: version.source_url,
           });
         }
-        const start = dayPart(version.stage_start);
-        const end = dayPart(version.stage_end);
+        const stageStatus = dateStatus(version, 'stage');
+        const start = stageStatus === 'confirmed' ? dayPart(version.stage_start) : '';
+        const end = stageStatus === 'confirmed' ? dayPart(version.stage_end) : '';
         if (start || end) {
           if (start && end && end < start) continue;
           const begin = start || end;
@@ -663,6 +705,7 @@ window.CduApi = (() => {
               category_label: entry.category_label,
               kind: 'event',
               label: start ? '活动阶段' : '活动阶段结束',
+              stage_status: 'confirmed',
               start: begin,
               end: finish,
               only: start && end ? null : (start ? 'start' : 'end'),

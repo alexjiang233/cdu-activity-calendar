@@ -5,9 +5,11 @@
  function shift(date,amount){const d=new Date(date+'T00:00:00Z');d.setUTCDate(d.getUTCDate()+amount);return d.toISOString().slice(0,10)}
  function moveMonth(month,amount){const [y,m]=month.split('-').map(Number);const d=new Date(Date.UTC(y,m-1+amount,1));return d.toISOString().slice(0,7)}
  function cells(month){const first=month+'-01',d=new Date(first+'T00:00:00Z'),offset=(d.getUTCDay()+6)%7;return Array.from({length:42},(_,i)=>shift(first,i-offset))}
+ const DEADLINE_LABELS={registration:'报名截止',submission:'作品提交截止',combined:'报名及作品提交截止',notice:'学院汇总/推荐节点'};
+ function dateStatus(v,field){const status=v[field+'_status'];if(['confirmed','unverified','conflict'].includes(status))return status;return v[field]?'confirmed':null}
  function build(entries){const result=[];for(const entry of entries)for(const v of entry.versions){if(v.conflict)continue;const meta={entryId:entry.id,title:entry.title,category:v.source_fields?.category||entry.category,categoryLabel:v.source_fields?.category_label||entry.category_label,colleges:v.colleges||[],featured:entry.featured!==false,version:v};
-   const deadline=day(v.deadline);if(deadline)result.push({...meta,id:v.source_url+'|deadline',kind:'deadline',label:v.deadline_kind==='submission'?'作品提交截止':v.deadline_kind==='combined'?'报名及作品截止':v.deadline_kind==='notice'?'截止':'报名截止',start:deadline,end:deadline,raw:v.deadline});
-   const start=day(v.stage_start),end=day(v.stage_end);if(start||end){if(start&&end&&end<start)continue;const from=start||end,to=end||from;result.push({...meta,id:v.source_url+'|event',kind:'event',label:start?'活动阶段':'活动阶段结束',start:from,end:to,only:start&&end?null:start?'start':'end',raw:v.stage_start||v.stage_end})}
+   const deadline=dateStatus(v,'deadline')==='confirmed'?day(v.deadline):null;if(deadline)result.push({...meta,id:v.source_url+'|deadline',kind:'deadline',label:DEADLINE_LABELS[v.deadline_kind]||'所列截止',deadline_kind:v.deadline_kind||null,deadline_status:'confirmed',start:deadline,end:deadline,precision:v.deadline_precision||null,raw:v.deadline});
+   const start=dateStatus(v,'stage')==='confirmed'?day(v.stage_start):null,end=dateStatus(v,'stage')==='confirmed'?day(v.stage_end):null;if(start||end){if(start&&end&&end<start)continue;const from=start||end,to=end||from;result.push({...meta,id:v.source_url+'|event',kind:'event',label:start?'活动阶段':'活动阶段结束',stage_status:'confirmed',start:from,end:to,only:start&&end?null:start?'start':'end',raw:v.stage_start||v.stage_end})}
   }return result}
  /* A calendar cell marks nodes, not days-in-between: a period only lands on its start and end. */
  function markOn(event,date){return event.start===date||event.end===date}

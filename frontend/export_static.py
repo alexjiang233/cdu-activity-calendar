@@ -52,10 +52,24 @@ def safe_key(value: str, kind: str) -> str:
     return text
 
 
+def _redact_json(value):
+    if isinstance(value, dict):
+        return {key: _redact_json(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_redact_json(item) for item in value]
+    if isinstance(value, str):
+        try:
+            from catalog.services import redact_public
+            return redact_public(value)
+        except Exception:
+            return value
+    return value
+
+
 def write_json(path: Path, payload) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
-        json.dumps(payload, ensure_ascii=False, separators=(',', ':')),
+        json.dumps(_redact_json(payload), ensure_ascii=False, separators=(',', ':')),
         encoding='utf-8', newline='\n',
     )
 
@@ -231,34 +245,48 @@ def build_catalog_export() -> tuple[dict, dict]:
         if notice.id in notices:
             notices[notice.id]['order'] = order
 
+    # 筛选缩范围必须与 backend services._sql_scope 完全一致：候选依据是通知的
+    # 原始 activity 字段（不是展示卡），且要算上未被投影为卡片版本的公开通知。
+    # 例如 series-b9f55af0ea03 的 2022 年通知原始 activity 指向 activity-80e8，
+    # 只按公开投影会漏掉这张卡；只按展示卡又会把后端本不纳入的卡加进来。
+    scope_notice_meta: dict[str, dict] = {}
+
+    def register_scope_notice(notice: Notice):
+        if notice.id in scope_notice_meta:
+            return
+        scope_notice_meta[notice.id] = {
+            'year': notice.year,
+            'colleges': sorted(t.code for t in notice.taxonomies.all() if t.kind == 'college'),
+            'levels': sorted(t.code for t in notice.taxonomies.all() if t.kind == 'level'),
+            'seasonal_months': sorted(services.decode_months(notice.seasonal_months)),
+            'search': notice.search_text or '',
+        }
+
     scope_activities = []
-    public_notice_ids = services._notice_qs().values_list('id', flat=True)
     for activity in activity_cards.values():
         own_ids = list(
-            Notice.objects.filter(activity_id=activity.id, id__in=public_notice_ids)
-            .order_by('id').values_list('id', flat=True)
+            Notice.objects.filter(activity_id=activity.id, visibility='public')
+            .order_by('id')
         )
-        missing = [nid for nid in own_ids if nid not in notices]
-        if missing:
-            # 当前公开活动没有“未落到任何卡片”的通知；出现时要先核对公开投影，
-            # 不能把未展示的通知搜索文本私自发布。
-            raise SystemExit(f'公开活动 {activity.id} 存在未进入卡片投影的通知：{missing[:5]}')
+        for notice in own_ids:
+            register_scope_notice(notice)
         scope_activities.append({
             'id': activity.id,
             'category': activity.category.code if activity.category_id else '',
             'search': activity.search_text or '',
-            'notice_ids': own_ids,
+            'notice_ids': [notice.id for notice in own_ids],
         })
 
     scope_groups = []
-    for group in ActivityGroup.objects.filter(visibility='public').order_by('id'):
-        group_ids = list(
-            group.notices.filter(id__in=public_notice_ids).order_by('id').values_list('id', flat=True)
-        )
-        missing = [nid for nid in group_ids if nid not in notices]
-        if missing:
-            raise SystemExit(f'公开分组卡 {group.id} 存在未进入卡片投影的通知：{missing[:5]}')
-        scope_groups.append({'id': group.id, 'title': group.title, 'notice_ids': group_ids})
+    for group in group_cards:
+        group_notices = list(group.notices.filter(visibility='public').order_by('id'))
+        for notice in group_notices:
+            register_scope_notice(notice)
+        scope_groups.append({
+            'id': group.id,
+            'title': group.title,
+            'notice_ids': [notice.id for notice in group_notices],
+        })
 
     plain_chunk, plain_total, _, _ = services._page_card_ids(
         services.Filters(page=1, page_size=1_000_000)
@@ -279,7 +307,8 @@ def build_catalog_export() -> tuple[dict, dict]:
         'counts': services.public_counts(),
         'cards': cards,
         'notices': notices,
-        'scope': {'activities': scope_activities, 'groups': scope_groups},
+        'scope': {'activities': scope_activities, 'groups': scope_groups,
+                  'notices': scope_notice_meta},
         'plain_items': plain_items,
         'selection_overrides': selection_overrides,
     }
@@ -497,7 +526,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description='导出 EdgeOne 静态站点')
     parser.add_argument('--db', help='正式数据库路径；默认 DJANGO_DB 或 backend/db.sqlite3')
     parser.add_argument('--snapshot', help='一致性快照输出路径')
+    parser.add_argument('--deploy', help='交付目录；默认 deploy/edgeone-drop')
     args = parser.parse_args()
+    global DEPLOY, SITE, DATA
+    if args.deploy:
+        DEPLOY = Path(args.deploy).resolve()
+        SITE = DEPLOY / 'site'
+        DATA = SITE / 'data'
 
     source = Path(args.db or os.environ.get('DJANGO_DB') or (BACKEND / 'db.sqlite3')).resolve()
     snapshot = Path(args.snapshot).resolve() if args.snapshot else (WORK / 'snapshot.sqlite3')

@@ -96,8 +96,8 @@
   fab.className = 'fab-stack';
   fab.setAttribute('data-show', 'false');
   fab.append(
-    button('up', '回到页面顶部', () => window.scrollTo({ top: 0, behavior: scrollBehavior() })),
-    button('filter', '回到筛选', () => {
+    button('up', '回到顶部', () => window.scrollTo({ top: 0, behavior: scrollBehavior() })),
+    button('filter', '调整筛选', () => {
       scrollTo(document.querySelector('.explore-controls'), 88);
     })
   );
@@ -107,7 +107,7 @@
   const syncRails = () => {
     const onQuery = document.body.dataset.page === 'query';
     rails.hidden = !onQuery;
-    fab.setAttribute('data-show', String(onQuery && compact.matches && window.scrollY > 420));
+    fab.setAttribute('data-show', String(onQuery && compact.matches));
   };
   addEventListener('scroll', syncRails, { passive: true });
   addEventListener('resize', syncRails);
@@ -173,5 +173,10 @@
     update();
   }
 
+  const panels=[...document.querySelectorAll('.quick-filter-panel')];
+  for(const panel of panels){
+    panel.addEventListener('toggle',()=>{if(panel.open)for(const other of panels)if(other!==panel)other.open=false});
+    panel.addEventListener('keydown',event=>{if(event.key==='Escape'){panel.open=false;panel.querySelector('summary').focus()}});
+  }
   watchCalendar();
 })();

@@ -16,12 +16,13 @@
  const statuses={agree:'日期及用途独立提取一致',image_agree:'图片转录一致，非自动正文核验',not_compared:'原文可定位，未做独立语义比较',missing:'独立提取待补',evidence_missing:'独立引文未定位',disagree:'提取有分歧',type_disagrees:'日期用途有分歧',value_without_support:'值与引文不符'};
  const el=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n};
  const link=(text,url)=>{const a=el('a',text,'source-link');a.href=url;a.target='_blank';a.rel='noopener noreferrer';return a};
- const date=v=>v?String(v).replace('T',' '):'日期待补';
+ function chinaParts(value){const raw=String(value||'');if(!raw)return null;if(!/(?:Z|[+-]\d{2}:?\d{2})$/.test(raw))return null;const d=new Date(raw);if(!Number.isFinite(d.getTime()))return null;const stamp=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).format(d);return {day:stamp.slice(0,10),clock:stamp.slice(11,16)}}
+ function date(v,precision){if(!v)return '日期待补';const local=chinaParts(v);if(local)return local.day+(precision==='day'?'':' '+local.clock);return String(v).replace('T',' ')}
  const profileCovers=(version,kind)=>Boolean(version.content_profile?.coverage?.[kind]);
  const profileHasDatedSchedule=version=>(version.content_profile?.sections||[]).some(s=>['schedule','registration'].includes(s.kind)&&(s.items||[]).some(i=>/(?:20\d{2}[年./-]\d{1,2}|\d{1,2}月\d{1,2}日|\d{1,2}日)/.test(i.text||'')));
  function safeCduUrl(value){try{const url=new URL(value);return (url.protocol==='http:'||url.protocol==='https:')&&(url.hostname==='cdu.edu.cn'||url.hostname.endsWith('.cdu.edu.cn'))}catch(_){return false}}
- const profileNames={audience:'参与对象',conditions:'参与条件',quota:'名额与推荐',location:'地点',registration:'报名步骤',materials:'所需材料',schedule:'日程安排',fees:'费用与缴费',content:'活动内容',benefits:'奖励与保障',contact:'联系与咨询',duties:'职责要求',other:'其他说明'};
- const kindOrder=['audience','conditions','quota','registration','materials','schedule','location','fees','benefits','contact','content','duties','other'];
+ const profileNames={audience:'参与对象',conditions:'参与条件',quota:'名额与推荐',location:'地点',registration:'报名步骤',materials:'所需材料',schedule:'日程安排',fees:'费用与缴费',content:'活动内容',benefits:'奖励与保障',contact:'联系与咨询',duties:'职责要求',notes:'其他说明',other:'其他说明'};
+ const kindOrder=['audience','conditions','quota','registration','materials','schedule','location','fees','benefits','contact','content','duties','notes','other'];
  const cleanListText=text=>String(text||'').replace(/^\s*(?:(?:[•·▪◦])\s*)?(?:(?:[（(]?\d{1,2}[）)]?[.、)）])\s*)+/,'');
  const displayText=text=>cleanListText(String(text||'').replace(/^\s*(?:[•·▪◦]\s*)?\d{1,2}[.、)）](?=[\u4e00-\u9fff《（])/,'').replace(/^\s*[•·▪◦]\s*/,''));
  /* 版面修复：OCR 把年份、时刻、汉字切断的地方接回去；不改写用词。 */
@@ -44,10 +45,14 @@
  const attachmentName=/^(?:附件\s*\d*\s*[:：.、]?\s*)?[^。；]{0,60}\.(?:docx?|xlsx?|pptx?|pdf|zip|rar|jpe?g|png|doc)$/i;
  const timeKind=kind=>kind==='schedule'||kind==='registration';
  /* 只在整段都是纯套话时丢弃；带数字、动作或名额的片段一律保留。 */
+ const salutationOnly=/^(?:各|全体|全校|全院)?(?:学院|班级|单位|部门|同学|教职工|师生)[：:]?$/;
+ const signatureOnly=/^(?:[一-鿿]{2,20}(?:委员会|学院|办公室|团委|学生会|协会))$/;
+ const officialIntro=/^为(?:贯彻|落实|深入|推进|推动|丰富|营造|促进|加强|提升|做好|响应|激发)/;
  const boilerplateOnly=text=>{
   const value=String(text||'').trim();
   if(!value)return true;
-  if(leadOnly.test(value)||attachmentName.test(value))return true;
+  if(leadOnly.test(value)||attachmentName.test(value)||salutationOnly.test(value)||signatureOnly.test(value)||/^附件[：:]?$/.test(value))return true;
+  if(officialIntro.test(value)&&value.length>100&&/现将|请各|请遵照|认真组织|通知如下|确保/.test(value))return true;
   if(usefulCue.test(value))return false;
   return boilerplateCue.test(value);
  };
@@ -114,6 +119,9 @@
    if(/^(?:内容|活动内容|比赛内容|主题|形式|组别|赛道|作品要求)$/.test(label))return 'content';
    if(/^(?:职责|任务|工作内容|考核|聘期)$/.test(label))return 'duties';
   }
+  if(/填写|登录|提交|报送|发送|上传|报名|申报|申请|扫码|扫描.{0,6}二维码/.test(t)&&!/名额|人数|每队|每组|不超过|至少|至多|限.{0,4}(?:名|人)|指导教师|资格/.test(t))return 'registration';
+  if(/奖励|奖金|奖品|证书|学分|加分|补贴|荣誉|奖项|一等奖|二等奖|三等奖|特等奖|优秀奖|冠军|亚军|季军/.test(t))return 'benefits';
+  if(/费用|收费|报名费|保险费|住宿费|交通费|餐费|押金|缴费|自费|自理|免费|\d+\s*元/.test(t))return 'fees';
   if(/联系人|联系电话|电话[：:]|邮箱[：:]|@[\w.-]+|QQ群|咨询群|群号/.test(t))return 'contact';
   if(/费用|收费|报名费|保险费|住宿费|交通费|餐费|押金|缴费|自费|自理/.test(t))return 'fees';
   if(/(?:缴|交|收|付|需|共|约)[^。；]{0,12}(?:元|人民币|美元)/.test(t))return 'fees';
@@ -160,9 +168,9 @@
   const ctx={lastLocation:'',lastSubject:''};
   const add=(kind,text,locator,sourceUrl)=>{
    if(!show(kind))return;
-   const key=looseKey(text);if(!key||seen.has(key))return;
+   const key=(kind==='benefits'||kind==='quota')?normKey(text):looseKey(text);if(!key||seen.has(key))return;
    const existing=groups.get(kind)?.items||[];
-   if(existing.some(item=>{const other=looseKey(item.text);return other.length>8&&key.length>8&&(other.includes(key)||key.includes(other))}))return;
+   if(existing.some(item=>{const other=(kind==='benefits'||kind==='quota')?normKey(item.text):looseKey(item.text);return other.length>8&&key.length>8&&(other.includes(key)||key.includes(other))}))return;
    seen.add(key);if(!groups.has(kind))groups.set(kind,{items:[]});groups.get(kind).items.push({text,locator,sourceUrl});
   };
   const process=(raw,fallback,locator,sourceUrl,fromFact)=>{
@@ -189,7 +197,7 @@
    if(skip&&skip.has(kind))continue;
    const group=groups.get(kind);if(!group)continue;
    /* 顶部摘要已经原样写过的句子不再在正文重复，只留补充条款。 */
-   const items=group.items.filter(item=>!(covered&&(covered.has(normKey(item.text))||covered.has(looseKey(item.text)))));
+   const items=group.items.filter(item=>!(officialIntro.test(item.text)&&item.text.length>100)&&!/^为确保[^。]{0,80}(?:顺利|圆满|安全)/.test(item.text)&&!(covered&&(covered.has(normKey(item.text))||covered.has(looseKey(item.text)))));
    if(!items.length)continue;
    const section=el('section',undefined,'profile-section');section.append(el('h5',profileNames[kind]||'其他说明'));
    const list=el('ul');for(const item of items){const li=el('li',item.text);if(item.locator)li.title=item.locator;list.append(li)}
@@ -224,7 +232,7 @@
   if(!catalog.colleges[state.interest])state.interest='any';if(state.college&&!catalog.colleges[state.college])state.college='';if(state.level&&!catalog.levels[state.level])state.level='';state.category=[...new Set(state.category.split(',').filter(k=>categories[k]))].join(',');if(!['seasonal','event','deadline'].includes(state.month_basis))state.month_basis='seasonal';if(state.month&&!['unknown',...Array.from({length:12},(_,i)=>String(i+1))].includes(state.month))state.month='';
   for(const key of ['year','phase'])if(![...document.getElementById(key).options].some(o=>o.value===state[key]))state[key]='';}
  function saveState(){try{const u=new URL(location.href);for(const key of filterKeys){if(state[key]&&!(key==='month_basis'&&state[key]==='seasonal'))u.searchParams.set(key,state[key]);else u.searchParams.delete(key)}u.hash=state.view==='home'?'home':state.view==='about'?'about':state.view==='compare'?'compare':state.view==='all'?'all':state.view==='registration'?'registration':state.view==='calendar'?'calendar':'discover';history.replaceState(null,'',u)}catch(_){/* Local file previews can deny history writes; filtering still works. */}}
- function syncControls(){document.querySelectorAll('[data-year]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.year===state.year)));document.getElementById('my-college').value=state.interest;document.getElementById('college-hint').textContent=state.interest==='any'?'可跳过；选择后会在这台设备记住。':'按原文明示的参与对象匹配；年级、专业等条件仍请看详情。';document.getElementById('query').value=state.q;for(const k of ['college','level','year','phase','month_basis'])document.getElementById(k).value=state[k];document.querySelectorAll('[data-month]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.month===state.month)));document.querySelectorAll('[data-category]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.category?state.category.split(',').includes(b.dataset.category):!state.category)));document.getElementById('month-help').textContent=state.month_basis==='seasonal'?'按往年参与月份查找，跨月征集只列开始月份。':state.month_basis==='deadline'?'按通知所列报名、作品提交等截止日期归类，不表示整个报名期间。':'按通知所列活动阶段归类；历史月份不代表今年安排。';document.querySelectorAll('[data-view]').forEach(a=>{if(a.dataset.view===state.view)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});document.getElementById('clear-query').hidden=!state.q;requestAnimationFrame(()=>{moveNav();if(!document.getElementById('query-page').hidden){const active=months.querySelector('[aria-pressed=true]');if(active){const x=active.offsetLeft-months.offsetLeft;if(x<months.scrollLeft||x+active.offsetWidth>months.scrollLeft+months.clientWidth)months.scrollLeft=Math.max(0,x-months.clientWidth/2+active.offsetWidth/2)}}});const extraCount=state.category.split(',').filter(k=>['learning','exchange','career'].includes(k)).length;extra.querySelector('summary').textContent='更多类型'+(extraCount?' · '+extraCount:'');if(extraCount)extra.open=true;document.getElementById('time-help').textContent='按北京时间 '+now().slice(0,10)+' 计算，不代表实时开放情况。'}
+ function syncControls(){document.getElementById('month-selection').textContent=state.month?(state.month==='unknown'?'日期待补':state.month+'月'):'全年';document.getElementById('type-selection').textContent=state.category?state.category.split(',').map(k=>categories[k]||k).join('、'):'全部类型';document.querySelectorAll('[data-year]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.year===state.year)));document.getElementById('my-college').value=state.interest;document.getElementById('college-hint').textContent=state.interest==='any'?'可跳过；选择后会在这台设备记住。':'按原文明示的参与对象匹配；年级、专业等条件仍请看详情。';document.getElementById('query').value=state.q;for(const k of ['college','level','year','phase','month_basis'])document.getElementById(k).value=state[k];document.querySelectorAll('[data-month]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.month===state.month)));document.querySelectorAll('[data-category]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.category?state.category.split(',').includes(b.dataset.category):!state.category)));document.getElementById('month-help').textContent=state.month_basis==='seasonal'?'按往年参与月份查找，跨月征集只列开始月份。':state.month_basis==='deadline'?'按通知所列报名、作品提交等截止日期归类，不表示整个报名期间。':'按通知所列活动阶段归类；历史月份不代表今年安排。';document.querySelectorAll('[data-view]').forEach(a=>{if(a.dataset.view===state.view)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current')});document.getElementById('clear-query').hidden=!state.q;requestAnimationFrame(()=>{moveNav();if(!document.getElementById('query-page').hidden){const active=months.querySelector('[aria-pressed=true]');if(active){const x=active.offsetLeft-months.offsetLeft;if(x<months.scrollLeft||x+active.offsetWidth>months.scrollLeft+months.clientWidth)months.scrollLeft=Math.max(0,x-months.clientWidth/2+active.offsetWidth/2)}}});const extraCount=state.category.split(',').filter(k=>['learning','exchange','career'].includes(k)).length;extra.querySelector('summary').textContent='更多类型'+(extraCount?' · '+extraCount:'');if(extraCount)extra.open=true;document.getElementById('time-help').textContent='按北京时间 '+now().slice(0,10)+' 计算，不代表实时开放情况。'}
  function select(key,value){visibleLimit=12;pageIndex=1;dropPageParam();if(['home','about'].includes(state.view)&&value)state.view='discover';if(key==='year'){yearSelection.clear();editionSelection.clear()}state[key]=value;saveState();syncControls();render()}
  function addTag(parent,text,key,value){const b=el('button',text,'meta-tag');b.type='button';b.setAttribute('aria-label','按'+text+'筛选');b.addEventListener('click',()=>select(key,value));parent.append(b)}
  function materials(parent,entry){for(const id of entry.material_ids){const r=materialMap.get(id);if(!r)continue;if(entry.material_ids.length>1)parent.append(el('h4',r.title));parent.append(el('p',r.summary));
@@ -337,18 +345,27 @@
  }
  window.ActivityDetails.audience={summary:conciseAudience,detail:audienceDetail};
  const DATE_TOKEN=/(?:20\d{2}\s*[年.\/-]\s*)?\d{1,2}\s*月\s*\d{1,2}\s*[日号]|\d{1,2}\s*月\s*\d{1,2}\s*[日晚]|20\d{2}[-.\/]\d{1,2}[-.\/]\d{1,2}/;
- function fmtDate(raw){const m=String(raw||'').match(/^([0-9]{4})-([0-9]{2})-([0-9]{2})(?:[T ]([0-9]{2}):([0-9]{2}))?/);if(!m)return String(raw||'');return Number(m[1])+'年'+Number(m[2])+'月'+Number(m[3])+'日'+(m[4]?' '+m[4]+':'+m[5]:'')}
+ function fmtDate(raw,precision){const local=chinaParts(raw);const m=String(raw||'').match(/^([0-9]{4})-([0-9]{2})-([0-9]{2})(?:[T ]([0-9]{2}):([0-9]{2}))?/);if(!m)return String(raw||'');const clock=precision==='day'?'':(local?local.clock:(m[4]?m[4]+':'+m[5]:''));return Number(m[1])+'年'+Number(m[2])+'月'+Number(m[3])+'日'+(clock?' '+clock:'')}
  function dateToken(text){const match=String(text||'').match(DATE_TOKEN);return match?match[0].replace(/\s+/g,''):''}
+ function deadlineLabelOf(version){
+  if(version.deadline_status==='unverified')return '历史日期（待核实）';
+  if(version.deadline_status==='conflict')return '日期有冲突';
+  if(version.deadline_kind==='registration')return '报名截止';
+  if(version.deadline_kind==='submission')return '作品提交截止';
+  if(version.deadline_kind==='combined')return '报名及作品提交截止';
+  if(version.deadline_kind==='notice')return '学院汇总/推荐节点';
+  return '原文所列截止';
+ }
  function cardTiming(version,groupTexts){
-  const result={deadline:'',event:''};
-  if(version.deadline)result.deadline=fmtDate(version.deadline);
-  if(version.stage_start){result.event=fmtDate(version.stage_start)+(version.stage_end&&version.stage_end.slice(0,10)!==version.stage_start.slice(0,10)?' 起':'')}
+  const result={deadline:'',event:'',deadlineLabel:'',deadlineNote:'',deadlineStatus:''};
+  if(version.deadline){result.deadline=fmtDate(version.deadline,version.deadline_precision);result.deadlineLabel=deadlineLabelOf(version);result.deadlineStatus=version.deadline_status||'';result.deadlineNote=version.deadline_note||''}
+  if(version.stage_status!=='unverified'&&version.stage_status!=='conflict'&&version.stage_start){result.event=fmtDate(version.stage_start)+(version.stage_end&&version.stage_end.slice(0,10)!==version.stage_start.slice(0,10)?' 起':'')}
   const allLines=['schedule','registration','location','materials','conditions','content','other'].flatMap(kind=>groupTexts(kind)||[]);
   const lines=allLines;
   const organizerOnly=/学院(?:汇总|统一|审核|收齐)|报送至|推报|组委会|评审|盖章|签字|院长|书记|学习委员|各班|教务处|研究生处|评估科/;
   const notATime=/原创|创作于|拍摄于|录制|发表|首发|须为.{0,12}(?:后|以前)|之后完成|取得.{0,8}(?:后|以来)|起算|形成时间|取得时间|有效期|学制|年龄|出生|工作年限|截止时间以/;
-  if(!result.deadline){const line=lines.find(t=>/截止|前提交|前完成|前报名|前发送|前上传|前报送/.test(t)&&DATE_TOKEN.test(t)&&!organizerOnly.test(t)&&!notATime.test(t));const token=line?dateToken(line):'';if(token)result.deadline=token+'（据原文）'}
-  if(!result.event){
+  if(!result.deadline){const line=lines.find(t=>/截止|前提交|前完成|前报名|前发送|前上传|前报送/.test(t)&&DATE_TOKEN.test(t)&&!organizerOnly.test(t)&&!notATime.test(t));const token=line?dateToken(line):'';if(token){result.deadline=token+'（据原文）';result.deadlineLabel='原文截止（据正文）'}}
+  if(!result.event&&version.stage_status!=='unverified'&&version.stage_status!=='conflict'){
    const schedules=lines.filter(t=>DATE_TOKEN.test(t)&&!notATime.test(t));
    const explicit=schedules.find(t=>/(?:活动|比赛|初赛|决赛|面试|笔试|培训|宣讲|展演|举行|开展)时间|时间[:：]|初赛|决赛|面试|笔试|宣讲|展演|举行|开展/.test(t)&&!/截止|前提交|前完成|前报名/.test(t));
    const withClock=schedules.find(t=>/[0-9]{1,2}:[0-9]{2}|上午|下午|晚上|晚[0-9]|晚$/.test(t)&&!/截止|前提交|前完成|前报名/.test(t)&&!organizerOnly.test(t));
@@ -367,6 +384,7 @@
    version.editorial_curated=Boolean(full.editorial_curated);
    if(full.content_profile)version.content_profile=full.content_profile;
    if(full.participation_facts)version.participation_facts=full.participation_facts;
+   for(const key of ['deadline','deadline_kind','deadline_precision','deadline_status','deadline_note','deadline_evidence','stage_start','stage_end','stage_status','stage_note','stage_evidence'])if(Object.prototype.hasOwnProperty.call(full,key))version[key]=full[key];
    if(Object.prototype.hasOwnProperty.call(full,'audience'))version.audience=full.audience;
    version._full=true;
    if(!node.isConnected)return;
@@ -412,11 +430,15 @@
   const rawKeyFact=groupTexts('registration')[0]||version.content_profile?.sections?.find(s=>s.kind==='registration')?.items?.[0]?.text||groupTexts('materials')[0]||groupTexts('content')[0]||'';const keyFact=/(参赛者须|选手(?:须|需)|报名者(?:须|需)|须为|必须|应当|需提交|须提交|报名资格|参赛条件|仅限|不得|不具备.*资格|需.{0,6}(提交|加入|填写|报名)|(?:提交|上传|填写|录制|完成).{0,12}(报名|作品|材料|视频|演讲稿|报名表|申请))/.test(rawKeyFact)?'':rawKeyFact;
   if(entry.id==='activity-4b6bd9d295d4')a.append(el('p','外国语学院初选 · 10月22日 19:00 · 2116教室','entry-takeaway compact-clause'));
   else if(show('editorial_notes')&&entry.editorial_note)a.append(el('p',entry.editorial_note,'entry-takeaway compact-clause'));
-  else if(keyFact&&!/^(?:参与|申请|申报|活动|面向)?对象/.test(keyFact)&&!(audience&&normKey(audience).includes(normKey(keyFact).slice(0,10))))a.append(el('p',keyFact,'entry-takeaway compact-clause'));
-    if(show('card_dates')){const timing=cardTiming(version,groupTexts);if(timing.deadline)a.append(el('p','报名截止 · '+timing.deadline,'compact-date'));if(timing.event)a.append(el('p','活动时间 · '+timing.event,'compact-date'));if(!timing.deadline&&!timing.event)a.append(el('p',(version.year?version.year+' 年':'历史')+'公告 · 未提取到日期','compact-date'))}
+  else if(keyFact&&keyFact.length<=90&&!/^(?:参与|申请|申报|活动|面向)?对象/.test(keyFact)&&!(audience&&normKey(audience).includes(normKey(keyFact).slice(0,10))))a.append(el('p',keyFact,'entry-takeaway compact-clause'));
+  const timing=cardTiming(version,groupTexts);
+    if(show('card_dates')){if(timing.deadline)a.append(el('p',(timing.deadlineLabel||'原文截止')+' · '+timing.deadline,'compact-date'));if(timing.event)a.append(el('p','活动时间 · '+timing.event,'compact-date'));if(!timing.deadline&&!timing.event)a.append(el('p',(version.year?version.year+' 年':'历史')+'公告 · 未提取到日期','compact-date'))}
   const d=el('details',undefined,'entry-details');d.append(el('summary','查看详情'+(entry.versions.length>1?' · '+entry.versions.length+' 个公告版本':'')));titleButton.addEventListener('click',()=>{d.open=!d.open});d.addEventListener('toggle',()=>{titleButton.setAttribute('aria-expanded',String(d.open));titleButton.setAttribute('aria-label',displayTitle+(d.open?'：收起详情':'：展开详情'));a.classList.toggle('details-open',d.open);if(d.open)hydrate(entry,version,a)});const body=el('div',undefined,'detail-content');
-  const quickFacts=[];if(audienceDetails&&show('audience'))quickFacts.push(['参与对象',audienceDetails]);if(show('card_dates')&&version.deadline)quickFacts.push(['原文所列截止',date(version.deadline)]);const materials=groupTexts('materials');if(materials.length)quickFacts.push(['需交材料',materials.join('；')]);
+  const quickFacts=[];if(audienceDetails&&show('audience'))quickFacts.push(['参与对象',audienceDetails]);if(show('card_dates')&&version.deadline)quickFacts.push([timing.deadlineLabel||'原文所列截止',date(version.deadline,version.deadline_precision)]);const materials=groupTexts('materials');if(materials.length)quickFacts.push(['需交材料',materials.join('；')]);
   if(quickFacts.length){const quick=el('dl',undefined,'detail-quickfacts');for(const [label,value] of quickFacts){quick.append(el('dt',label),el('dd',value))}body.append(quick)}
+  if(timing.deadlineNote&&(timing.deadlineStatus==='unverified'||timing.deadlineStatus==='conflict'||version.deadline_kind==='notice'))body.append(el('p','日期说明：'+timing.deadlineNote,'profile-status'))
+  if(version.stage_note&&(version.stage_status==='unverified'||version.stage_status==='conflict'))body.append(el('p','活动日期说明：'+version.stage_note,'profile-status'))
+  for(const [label,evidence] of [['截止日期依据',version.deadline_evidence],['活动日期依据',version.stage_evidence]]){if(!evidence||!evidence.locator)continue;const p=el('p',label+'：'+evidence.locator+(evidence.attachment?' · '+evidence.attachment:''),'profile-status');if(evidence.source_url)p.append(' ',link('查看原文',evidence.source_url));body.append(p)}
   body.append(meta);
   if(show('editorial_notes')&&entry.editorial_note)body.append(el('h4','补充说明'),el('p',entry.editorial_note));
   if(show('past_versions')){
@@ -427,7 +449,7 @@
      const b=el('button',year==='unknown'?'年份未明确':year+' 年','year-button');b.type='button';
      b.setAttribute('aria-pressed',String(year===activeYear));b.setAttribute('aria-label','只看 '+(year==='unknown'?'年份未明确':year+' 年')+' 的公告');
      b.addEventListener('click',()=>{yearSelection.set(entry.id,year);editionSelection.delete(entry.id);
-       const next=card(entry);next.querySelector('.entry-details').open=true;swapCard(a,next)});
+       const next=card(entry);const opened=next.querySelector('.entry-details');opened.open=true;swapCard(a,next);hydrate(entry,next._selectedVersion,next)});
      row.append(b);
     }
     body.append(row);
@@ -438,7 +460,7 @@
     for(const v of yearList){let optionLabel=versionLabel(v,entry);const count=(used.get(optionLabel)||0)+1;used.set(optionLabel,count);if(count>1)optionLabel+=' · 同源第 '+count+' 份';
      const option=el('option',optionLabel);option.value=v.source_url;option.selected=v===version;control.append(option)}
     control.addEventListener('change',()=>{editionSelection.set(entry.id,control.value);
-      const next=card(entry);next.querySelector('.entry-details').open=true;swapCard(a,next)});
+      const next=card(entry);const opened=next.querySelector('.entry-details');opened.open=true;swapCard(a,next);hydrate(entry,next._selectedVersion,next)});
     label.append(control);body.append(label);
    }
   }
@@ -454,7 +476,11 @@
   const source=el('div',undefined,'entry-source');if(show('published_dates')&&version.published)source.append(el('span','发布于 '+date(version.published)));if(show('source_links')&&safeCduUrl(version.source_url))source.append(link('官方原文',version.source_url));body.append(source);
   if(show('source_links')&&r?.related_sources?.length){const related=el('details');related.append(el('summary','补充通知'));for(const item of r.related_sources)if(safeCduUrl(item.source_url))related.append(link(item.title,item.source_url));body.append(related)}
   if(show('editorial_notes')&&r?.notes?.length){const notes=r.notes.filter(n=>!/(?:WorkBuddy|DeepSeek|首筛|人工审核|后续.*提取|原文未提供：)/i.test(n)).map(n=>n.replace(/(?:stage_start|stage_end|deadline_kind)[^；。]*/g,'').replace(/，结束日期不重复写年份，/g,'。').replace(/。；/g,'。'));if(notes.length){const ul=el('ul',undefined,'notice-notes');for(const n of notes)ul.append(el('li',n));body.append(ul)}}
-  d.append(body);a.append(d);return a;
+  d.append(body);a.append(d);a.classList.add('activity-card');
+  const main=el('div',undefined,'activity-card-main'),facts=el('div',undefined,'activity-card-facts');
+  for(const node of [...a.children]){if(node===d)continue;(node.matches('.entry-audience,.compact-date')?facts:main).append(node)}
+  a.prepend(main);if(facts.children.length)a.insertBefore(facts,d);else a.classList.add('without-facts');
+  a._selectedVersion=version;return a;
  }
  const pagerState={page:1};
  function dropPageParam(){try{const u=new URL(location.href);if(u.searchParams.has('page')){u.searchParams.delete('page');history.replaceState(null,'',u)}}catch(_){}}
@@ -462,7 +488,7 @@
  function pageCount(total){return Math.max(1,Math.ceil(total/PAGE_SIZE))}
  function setUrlPage(value){try{const u=new URL(location.href);if(value>1)u.searchParams.set('page',String(value));else u.searchParams.delete('page');history.pushState(null,'',u)}catch(_){}}
  function pageDateRange(rows,page){const slice=rows.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE);const dates=slice.map(r=>core.selectedVersion(r,state,now())?.published).filter(Boolean);return dates.length===slice.length&&dates.length?{newest:dates[0],oldest:dates[dates.length-1]}:null}
- let inflightKey='',inflightAt=0;
+ let inflightKey='',successfulKey='',inflightAt=0,uiRequest=0;
  async function loadRows(){
   if(['home','about','calendar','guides'].includes(state.view))return {skipped:true,results:[]};
   const seq=++renderSeq;
@@ -470,12 +496,12 @@
                 month:state.month,month_basis:state.month_basis,interest:state.interest,
                 categories:state.category,page:urlPage()};
   const key=JSON.stringify(params);
-  if(key===inflightKey&&Date.now()-inflightAt<800&&serverRows.length){return {count:serverCount,page:serverPage,total_pages:serverPages,results:serverRows}}
+  if(key===successfulKey&&key===inflightKey&&Date.now()-inflightAt<800&&serverRows.length){return {count:serverCount,page:serverPage,total_pages:serverPages,results:serverRows}}
   inflightKey=key;inflightAt=Date.now();
   try{
    const data=await window.CduApi.activities(params);
    if(seq!==renderSeq)return null;
-   serverRows=data.results||[];serverCount=data.count||0;
+   successfulKey=key;serverRows=data.results||[];serverCount=data.count||0;
    serverPages=data.total_pages||1;serverPage=data.page||1;
    catalog.entries=serverRows;
    /* edition 深链要等首批列表到达才知道落在哪张卡；只在首次命中时应用，后续用户切换不再覆盖。 */
@@ -510,11 +536,11 @@
  const compareFields=[['audience','参与对象'],['deadline','报名 / 提交截止'],['schedule','举办时间'],['location','地点'],['registration','报名方式'],['materials','作品 / 材料'],['conditions','资格要求'],['fees','费用'],['benefits','奖励']];
  function comparisonValues(version){
   const groups=mergedProfile(version),items=kind=>(groups.get(kind)?.items||[]).map(i=>i.text).filter(Boolean);
-  const monthDay=value=>String(value||'').replace(/^(20\d{2})[-./](\d{2})[-./](\d{2})(?:T(\d{2}:\d{2})(?::\d{2})?(?:[+-]\d{2}:\d{2}|Z)?)?$/,(_,year,m,d,clock)=>Number(m)+'月'+Number(d)+'日'+(clock&&clock!=='00:00'?' '+clock:'')+(version.year&&Number(year)!==Number(version.year)?Number(year)===Number(version.year)+1?'（次年）':'（'+year+'年）':''));
+  const monthDay=value=>{const local=chinaParts(value);const source=local?local.day+'T'+local.clock:String(value||'');return source.replace(/^(20\d{2})[-./](\d{2})[-./](\d{2})(?:T(\d{2}:\d{2})(?::\d{2})?(?:[+-]\d{2}:\d{2}|Z)?)?$/,(_,year,m,d,clock)=>Number(m)+'月'+Number(d)+'日'+(clock&&clock!=='00:00'&&version.deadline_precision!=='day'?' '+clock:'')+(version.year&&Number(year)!==Number(version.year)?Number(year)===Number(version.year)+1?'（次年）':'（'+year+'年）':''))};
   const timing=cardTiming(version,items),audiences=[...new Set([version.audience,...items('audience')].map(audienceDetail).filter(Boolean))];
   const audience=audiences.filter((text,i,all)=>!all.some((other,j)=>i!==j&&other.length>text.length&&normKey(other).includes(normKey(text)))).join('；');
   const span=version.stage_start?[monthDay(version.stage_start),version.stage_end&&version.stage_end!==version.stage_start?monthDay(version.stage_end):''].filter(Boolean).join(' — '):'';
-  const cutoffLabel={registration:'报名：',submission:'作品提交：',combined:'报名及作品：',notice:'所列截止：'}[version.deadline_kind]||'';
+  const cutoffLabel=version.deadline_status==='unverified'?'日期待核实：':version.deadline_status==='conflict'?'日期有冲突：':{registration:'报名：',submission:'作品提交：',combined:'报名及作品：',notice:'学院汇总/推荐：'}[version.deadline_kind]||'';
   const values={audience,deadline:version.deadline?cutoffLabel+monthDay(version.deadline):timing.deadline.replace(/20\d{2}年/g,''),schedule:span||timing.event.replace(/20\d{2}年/g,'')};
   for(const kind of ['location','registration','materials','conditions','fees','benefits'])values[kind]=items(kind).join('；');
   if(version.conflict)for(const key of ['deadline','schedule'])values[key]='';
@@ -580,8 +606,8 @@
   const status=el('p','第 '+current+' / '+pages+' 页 · 共 '+serverCount+' 项','pager-status');status.id='pager-status';status.setAttribute('aria-live','polite');nav.append(status);
   list.append(nav);
  }
- async function render(){SitePages.show(state.view);if(['home','about','calendar','guides'].includes(state.view))return;const list=document.getElementById('catalog-list');const previous=new Map([...list.querySelectorAll('article')].map(n=>[n.dataset.id,n.getBoundingClientRect()]));document.getElementById('view-description').classList.toggle('sr-only',!['registration','compare'].includes(state.view));const data=await loadRows();if(!data)return;const rows=serverRows;document.getElementById('result-title').textContent='活动列表';document.getElementById('count').textContent=({discover:'精选活动',all:'全部活动',registration:'当前报名',compare:'往届对比'}[state.view]||'活动')+' · '+serverCount+' 项结果';
-  document.getElementById('view-description').textContent=state.view==='compare'?'两年并排，看相同与不同。先看四项，更多要求按需展开。':state.view==='registration'?'列出原文写明报名或提交截止、且今天还没到期的活动。截止日期来自通知原文；没有写明截止的记录可在全部活动里按时间查找。': '优先看需要组队、准备作品或提出申请的竞赛、项目、实践与招募。时间和资格请回到原文确认。';
+ async function render(){const request=++uiRequest;SitePages.show(state.view);if(['home','about','calendar','guides'].includes(state.view))return;const list=document.getElementById('catalog-list');const previous=new Map([...list.querySelectorAll('article')].map(n=>[n.dataset.id,n.getBoundingClientRect()]));document.getElementById('view-description').classList.toggle('sr-only',!['registration','compare'].includes(state.view));const results=document.getElementById('results');results.setAttribute('aria-busy','true');list.inert=true;document.getElementById('count').textContent='正在查找活动…';const data=await loadRows();if(request!==uiRequest)return;results.removeAttribute('aria-busy');list.inert=false;if(!data)return;const rows=serverRows;document.getElementById('result-title').textContent='活动列表';document.getElementById('count').textContent=({discover:'精选活动',all:'全部活动',registration:'当前报名 / 提交',compare:'往届对比'}[state.view]||'活动')+' · '+serverCount+' 项结果';
+  document.getElementById('view-description').textContent=state.view==='compare'?'两年并排，看相同与不同。先看四项，更多要求按需展开。':state.view==='registration'?'只列原文写明、今天还未到期的学生报名或作品提交截止；学院汇总/推荐节点和无原文依据的日期不纳入。日期不明确的记录仍可在全部活动里查看。': '优先看需要组队、准备作品或提出申请的竞赛、项目、实践与招募。时间和资格请回到原文确认。';
   paintResults(list,rows,previous);if(data.error){list.append(errorBlock(data.error))}else if(!rows.length){const e=el('div',undefined,'empty');e.append(el('h3','没有匹配的活动'),el('p',state.view==='registration'?'当前没有原文写明、且尚未到期的报名或提交机会。可以清除筛选，或到全部活动按月份查找。':state.month==='unknown'?'当前类型没有日期待补的记录。':state.month?'这个月份暂未收录匹配记录，试试全年或其他类型。':'试试其他类型，或清除筛选。'));if(state.month){const all=el('button','查看全年','text-button');all.type='button';all.addEventListener('click',()=>select('month',''));e.append(all)}if(state.interest!=='any'){const any=el('button','不限学院查看','text-button');any.type='button';any.addEventListener('click',()=>{try{localStorage.removeItem('cdu-college-preference')}catch{}select('interest','any')});e.append(any)}const b=el('button','清除全部筛选','primary-button');b.type='button';b.addEventListener('click',reset);e.append(b);list.append(e)}
   const tags=document.getElementById('active-tags');tags.replaceChildren();if(state.interest!=='any'){const b=el('button','适合 '+catalog.colleges[state.interest]+' ×','filter-tag');b.addEventListener('click',()=>{try{localStorage.removeItem('cdu-college-preference')}catch{}select('interest','any')});tags.append(b)}
   for(const key of ['q','college','level','year','category','phase','month']){if(!state[key])continue;const values=key==='category'?state.category.split(','):[state[key]];for(const value of values){const text=key==='q'?'搜索：'+value:key==='category'?categories[value]:key==='month'?(value==='unknown'?'日期待补':value+'月')+' · '+(state.month_basis==='seasonal'?'往年参与':state.month_basis==='deadline'?'所列截止':'举办时间'):document.getElementById(key).selectedOptions[0]?.textContent||value;const b=el('button',text,'filter-tag');b.type='button';b.append(el('span','×'));b.setAttribute('aria-label','移除筛选：'+text);b.addEventListener('click',()=>select(key,key==='category'?state.category.split(',').filter(k=>k!==value).join(','):''));tags.append(b)}}

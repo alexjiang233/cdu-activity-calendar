@@ -8,24 +8,31 @@
   if(/(?:Z|[+-]\d{2}:?\d{2})$/.test(value)){const parsed=new Date(value);if(Number.isFinite(parsed.getTime()))return new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).format(parsed).replace(' ','T')}
   if(!value.includes('T'))value+='T23:59:59';return value.length===16?value+':00':value
  }
+ function dateStatus(version,field){const status=version[field+'_status'];if(['confirmed','unverified','conflict'].includes(status))return status;return version[field]?'confirmed':null}
+ const DEADLINE_LABELS={registration:['报名截止前','今日报名截止','报名已截止'],submission:['作品提交截止前','今日作品提交截止','交作品已截止'],combined:['报名及作品截止前','今日报名及作品截止','报名及作品已截止'],notice:['学院汇总/推荐前','今日学院汇总/推荐','学院汇总/推荐已过']};
  function phase(version,kind,now=chinaNow()){
   if(kind==='reference')return {id:'reference',label:'参考资料',tone:'muted'};
+  const deadlineStatus=dateStatus(version,'deadline'),stageStatus=dateStatus(version,'stage');
+  if(deadlineStatus==='conflict'||stageStatus==='conflict')return {id:'unknown',label:'日期有差异',tone:'warning'};
   if(version.conflict)return {id:'unknown',label:'版本有差异',tone:'warning'};
-  const day=now.slice(0,10),start=(version.stage_start||'').slice(0,10),end=version.stage_end;
+  const day=now.slice(0,10),start=stageStatus==='confirmed'?(version.stage_start||'').slice(0,10):'',end=stageStatus==='confirmed'?version.stage_end:'';
   if(start&&end&&start<=day&&day<=end)return {id:'scheduled',label:'通知所列活动期',tone:'active'};
-  const cutoff=endTime(version.deadline);
-  if(cutoff){if(cutoff>=now)return {id:cutoff.slice(0,10)===day?'today':'before_deadline',label:cutoff.slice(0,10)===day?'今日截止':'所列截止前',tone:'active'};
+  const cutoff=deadlineStatus==='confirmed'?endTime(version.deadline):null;
+  const labels=DEADLINE_LABELS[version.deadline_kind]||['所列截止前','今日截止','所列截止已过'];
+  if(cutoff){if(cutoff>=now)return {id:cutoff.slice(0,10)===day?'today':'before_deadline',label:cutoff.slice(0,10)===day?labels[1]:labels[0],tone:'active'};
    if((end&&end<day)||(!end&&start&&start<day))return {id:'past',label:'所列日期已过',tone:'muted'};
-   return {id:'deadline_passed',label:version.deadline_kind==='submission'?'交作品已截止':version.deadline_kind==='combined'?'报名及作品已截止':version.deadline_kind==='notice'?'所列截止已过':'报名已截止',tone:'warning'};}
+   return {id:'deadline_passed',label:labels[2],tone:'warning'};}
   if(start&&start>day)return {id:'upcoming',label:'活动日期未到',tone:'muted'};
   if(start&&start===day)return {id:'scheduled',label:'通知所列活动日',tone:'active'};
   if(start&&start<day)return {id:'past',label:'所列起始日已过',tone:'muted'};
-  return {id:'unknown',label:version.year?version.year+' 年公告':'历史公告',tone:'muted'};
+  const unverified=deadlineStatus==='unverified'||stageStatus==='unverified';
+  return {id:'unknown',label:(version.year?version.year+' 年公告':'历史公告')+(unverified?' · 日期待核实':''),tone:'muted'};
  }
  function timingRange(version,basis='event'){
   if(version.conflict)return null;
   const valid=raw=>{const m=String(raw||'').match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T| )/);if(!m)return null;const day=m[1]+'-'+m[2]+'-'+m[3],d=new Date(day+'T00:00:00Z');return Number.isFinite(d.getTime())&&d.toISOString().slice(0,10)===day?day:null};
-  if(basis==='deadline'){const day=valid(version.deadline);return day?[day,day]:null}
+  if(basis==='deadline'){if(dateStatus(version,'deadline')!=='confirmed')return null;const day=valid(version.deadline);return day?[day,day]:null}
+  if(dateStatus(version,'stage')!=='confirmed')return null;
   const start=valid(version.stage_start),end=valid(version.stage_end);
   if(!start)return null;
   return [start,end&&end>=start?end:start];
@@ -53,7 +60,7 @@
   return candidates.sort((a,b)=>(b.year||0)-(a.year||0))[0]||null;
  }
  function relevant(version,college){const s=version.audience_scope;return !college||college==='any'||Boolean(s&&(s.kind==='campus'||s.kind==='college'&&s.colleges.includes(college)))}
- function registrationOpen(version,now=chinaNow()){if(version.conflict)return false;const today=now.slice(0,10);const windows=version.registration_windows||[];if(windows.length)return windows.some(w=>w.start<=today&&today<=w.end)&&(!version.deadline||endTime(version.deadline)>=now);if(!version.deadline)return false;if(version.deadline_kind==='event')return false;return endTime(version.deadline)>=now}
+ function registrationOpen(version,now=chinaNow()){if(version.conflict)return false;if(dateStatus(version,'deadline')!=='confirmed')return false;const today=now.slice(0,10);const windows=version.registration_windows||[];if(windows.length)return windows.some(w=>w.start<=today&&today<=w.end)&&(!version.deadline||endTime(version.deadline)>=now);if(!version.deadline)return false;if(!['registration','combined','submission'].includes(version.deadline_kind))return false;return endTime(version.deadline)>=now}
  function matches(entry,filters,now=chinaNow()){
   if(filters.view==='discover'&&(entry.kind==='reference'||entry.featured===false||entry.spotlight===false||CduProjection.collegeOutOfFeatured(entry)))return false;
   if(filters.view==='compare'&&new Set(entry.versions.map(v=>v.year).filter(Boolean)).size<2)return false;
