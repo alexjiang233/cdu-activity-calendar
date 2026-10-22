@@ -792,16 +792,16 @@ window.CduApi = (() => {
   }
 
   function loadScripts(list) {
-    return list.reduce((chain, src) => chain.then(() => new Promise((resolve, reject) => {
+    return Promise.all(list.map(src => new Promise((resolve, reject) => {
       const script = document.createElement('script');
       const url = new URL(src, document.baseURI);
       if (!REVISION.startsWith('__CDU_')) url.searchParams.set('v', REVISION);
       script.src = url.toString();
-      script.defer = false;
+      script.async = false; // 并行下载，仍按插入顺序执行。
       script.onload = resolve;
       script.onerror = () => reject(new Error('脚本加载失败：' + src));
       document.body.append(script);
-    })), Promise.resolve());
+    })));
   }
 
   async function request(path, options) {

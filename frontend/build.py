@@ -33,14 +33,16 @@ BOOT_STYLE = """
 .boot-message{font-size:13px;color:#edc8bd;min-height:24px;text-align:center;max-width:85vw}
 .boot-line{width:94px;height:2px;background:#efc9af30;overflow:hidden}
 .boot-line:after{content:'';display:block;width:45%;height:100%;background:#ffe3b6;animation:boot-line 1.3s ease-in-out infinite}
-#boot-status.is-leaving{animation:boot-reveal .55s cubic-bezier(.76,0,.24,1) both;pointer-events:none}
+#boot-status.is-leaving{animation:boot-reveal .75s cubic-bezier(.22,1,.36,1) both;pointer-events:none}
+body.is-revealing>header,body.is-revealing>main,body.is-revealing>footer{animation:content-reveal .85s cubic-bezier(.22,1,.36,1) both}
 #boot-status[data-state=error] .boot-line{display:none}
 #boot-status button{margin-left:14px;border:1px solid #ffd9c2;background:transparent;color:inherit;
   border-radius:6px;padding:4px 10px;font:inherit;cursor:pointer}
 @keyframes boot-float{50%{translate:0 -8px}}
 @keyframes boot-line{from{translate:-110% 0}to{translate:330% 0}}
-@keyframes boot-reveal{to{clip-path:inset(0 0 100% 0)}}
-@media(prefers-reduced-motion:reduce){.boot-ticket,.boot-line:after{animation:none}#boot-status.is-leaving{animation:none;opacity:0}}
+@keyframes boot-reveal{to{opacity:0}}
+@keyframes content-reveal{from{opacity:0;translate:0 12px}to{opacity:1;translate:0 0}}
+@media(prefers-reduced-motion:reduce){.boot-ticket,.boot-line:after,body.is-revealing>header,body.is-revealing>main,body.is-revealing>footer{animation:none}#boot-status.is-leaving{animation:none;opacity:0}}
 """
 
 BOOT_MARKUP = '''<div id="boot-status" role="status" aria-live="polite"><div class="boot-brand">CDU / CAMPUS LIFE</div><div class="boot-scene" aria-hidden="true"><div class="boot-ticket"></div><div class="boot-ticket"></div><div class="boot-ticket"><svg viewBox="0 0 40 40"><rect x="5" y="8" width="30" height="28" rx="5"/><path d="M5 16h30M13 4v8M27 4v8M12 23h5M23 23h5M12 29h5"/></svg></div></div><p class="boot-title">校园，正在展开。</p><div class="boot-line" aria-hidden="true"></div><div class="boot-message">正在准备页面…</div></div><noscript><style>.is-booting{overflow:auto}.is-booting>header,.is-booting>main,.is-booting>footer,.is-booting>.skip{visibility:visible}#boot-status{display:none}</style><p>请启用 JavaScript 以查看校园活动和指南。</p></noscript>'''
@@ -67,12 +69,13 @@ BOOT_SCRIPT = """
   Promise.resolve().then(function(){if(!window.CduApi)throw new Error('页面脚本未能下载');return window.CduApi.boot()}).then(function(){
     return window.CduApi.loadScripts(SCRIPTS_PLACEHOLDER);
   }).then(function(){
-    return Promise.all([window.CduInitialViewReady,document.fonts?Promise.race([document.fonts.ready,new Promise(function(resolve){setTimeout(resolve,1200)})]):null]);
+    return window.CduInitialViewReady;
   }).then(function(){
     clearTimeout(slow);
     requestAnimationFrame(function(){requestAnimationFrame(function(){
-      document.body.classList.remove('is-booting');content.forEach(function(node){node.inert=false});
-      if(status){status.classList.add('is-leaving');setTimeout(function(){status.hidden=true},matchMedia('(prefers-reduced-motion:reduce)').matches?0:550)}
+      document.body.classList.remove('is-booting');document.body.classList.add('is-revealing');content.forEach(function(node){node.inert=false});
+      setTimeout(function(){document.body.classList.remove('is-revealing')},900);
+      if(status){status.classList.add('is-leaving');setTimeout(function(){status.hidden=true},matchMedia('(prefers-reduced-motion:reduce)').matches?0:750)}
     })});
   }).catch(function(error){
     clearTimeout(slow);

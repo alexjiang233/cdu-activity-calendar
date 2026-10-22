@@ -112,14 +112,14 @@ window.CduApi = (() => {
 
   // 启动：取到 meta/taxonomies/home 后再按顺序加载页面脚本（脚本内可同步读取 CduData）
   function loadScripts(list) {
-    return list.reduce((chain, src) => chain.then(() => new Promise((resolve, reject) => {
+    return Promise.all(list.map(src => new Promise((resolve, reject) => {
       const script = document.createElement('script');
       script.src = src;
-      script.defer = false;
+      script.async = false; // 并行下载，仍按插入顺序执行。
       script.onload = resolve;
       script.onerror = () => reject(new Error('脚本加载失败：' + src));
       document.body.append(script);
-    })), Promise.resolve());
+    })));
   }
 
   return { boot, request, activities, detail, calendar, guides, guide, services, onReady,
