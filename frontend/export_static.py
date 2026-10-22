@@ -232,9 +232,10 @@ def build_catalog_export() -> tuple[dict, dict]:
             notices[notice.id]['order'] = order
 
     scope_activities = []
+    public_notice_ids = services._notice_qs().values_list('id', flat=True)
     for activity in activity_cards.values():
         own_ids = list(
-            Notice.objects.filter(activity_id=activity.id, visibility='public')
+            Notice.objects.filter(activity_id=activity.id, id__in=public_notice_ids)
             .order_by('id').values_list('id', flat=True)
         )
         missing = [nid for nid in own_ids if nid not in notices]
@@ -252,7 +253,7 @@ def build_catalog_export() -> tuple[dict, dict]:
     scope_groups = []
     for group in ActivityGroup.objects.filter(visibility='public').order_by('id'):
         group_ids = list(
-            group.notices.filter(visibility='public').order_by('id').values_list('id', flat=True)
+            group.notices.filter(id__in=public_notice_ids).order_by('id').values_list('id', flat=True)
         )
         missing = [nid for nid in group_ids if nid not in notices]
         if missing:

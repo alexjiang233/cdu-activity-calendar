@@ -16,7 +16,9 @@ import re
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 
-from django.db.models import Count, Max, Q
+from django.db.models import (Case, CharField, Count, F, FilteredRelation, Max, Q,
+                              Subquery, Value, When, Window)
+from django.db.models.functions import Coalesce, Concat, RowNumber
 from django.utils import timezone
 from . import participation
 
@@ -230,8 +232,24 @@ def activity_search_text(activity: Activity) -> str:
 
 
 def _notice_qs(with_content: bool = False):
+    # Only the most recently published notice per display card and year is public.
+    # Original notices stay editable in the workbench. Unknown dates are not guessed.
+    candidates = (Notice.objects.filter(visibility='public')
+        .annotate(public_group=FilteredRelation('groups', condition=Q(groups__visibility='public'))))
+    candidates = candidates.annotate(public_scope=Case(
+        When(public_group__id__isnull=False,
+             then=Concat(Value('group:'), F('public_group__id'))),
+        default=Concat(Value('activity:'), Coalesce('display_activity_id', 'activity_id')),
+        output_field=CharField()))
+    winners = (candidates.annotate(public_year=Case(
+        When(Q(year__isnull=True) | Q(published__isnull=True), then=F('id')),
+        default=Value('dated'), output_field=CharField()))
+        .annotate(public_rank=Window(expression=RowNumber(),
+            partition_by=[F('public_scope'), F('year'), F('public_year')],
+            order_by=[F('published').desc(nulls_last=True), F('position').asc(), F('id').asc()]))
+        .filter(public_rank=1).order_by().values('id'))
     # 画像是一对一，join 过来即可；事实只有详情才需要
-    qs = (Notice.objects.filter(visibility='public')
+    qs = (Notice.objects.filter(visibility='public', pk__in=Subquery(winners))
           .select_related('source', 'activity', 'activity__category', 'profile')
           .prefetch_related('taxonomies'))
     if with_content:
@@ -241,6 +259,22 @@ def _notice_qs(with_content: bool = False):
 
 def _notice_order(notice: Notice):
     return (notice.year or 0, notice.published or date.min, -notice.position)
+
+
+def latest_notice_versions(notices):
+    """Keep unknown dates untouched; break same-day ties deterministically."""
+    ordered = sorted(notices, key=lambda n: (
+        -(n.year or 0), -(n.published.toordinal() if n.published else 0),
+        n.position, n.pk))
+    years = set()
+    selected = []
+    for notice in ordered:
+        if notice.year and notice.published:
+            if notice.year in years:
+                continue
+            years.add(notice.year)
+        selected.append(notice)
+    return selected
 
 
 @dataclass
@@ -285,10 +319,15 @@ def card_notice_qs(card: Card | str, with_content: bool = False):
         return Notice.objects.none()
     qs = _notice_qs(with_content)
     if card.group is not None:
-        return qs.filter(groups=card.group).distinct()
-    return (qs.filter(Q(display_activity=card.activity) |
+        qs = qs.filter(groups=card.group).distinct()
+    else:
+        qs = (qs.filter(Q(display_activity=card.activity) |
                       Q(display_activity__isnull=True, activity=card.activity))
             .exclude(groups__visibility='public').distinct())
+    # A source can belong to more than one group; enforce the rule for this card too.
+    ids = [n.pk for n in latest_notice_versions(
+        qs.select_related(None).prefetch_related(None).only('id', 'year', 'published', 'position'))]
+    return qs.filter(pk__in=ids)
 
 
 def card_has_notice(card_id: str, notice_id: str) -> bool:
@@ -335,7 +374,7 @@ def load_cards(public_only: bool = True, activity_ids=None, group_ids=None) -> l
         ids = {n.id for n in group.notices.all()}
         grouped_ids |= ids
         rows.append(CardRow(Card('group', group.id, group.activity, group),
-                            [n for n in notices if n.id in ids]))
+                            latest_notice_versions([n for n in notices if n.id in ids])))
 
     activities = Activity.objects.select_related('category')
     if public_only:
@@ -344,7 +383,7 @@ def load_cards(public_only: bool = True, activity_ids=None, group_ids=None) -> l
         activities = activities.filter(id__in=activity_ids)
     for activity in activities:
         own = [n for n in by_card.get(activity.id, []) if n.id not in grouped_ids]
-        rows.append(CardRow(Card('activity', activity.id, activity, None), own))
+        rows.append(CardRow(Card('activity', activity.id, activity, None), latest_notice_versions(own)))
     return [row for row in rows if row.notices]
 
 
