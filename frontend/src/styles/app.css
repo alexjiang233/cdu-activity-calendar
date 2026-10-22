@@ -759,11 +759,15 @@ html[data-input-method=keyboard] .global-nav a[aria-current=page]::after{transfo
 
 /* 一级内页标题只有这一套尺寸，避免页面旧规则改变中英文的比例。 */
 :root{--page-title-size:clamp(36px,4.8vw,64px);--page-kicker-size:12px;--page-deck-size:17px}
-:is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading{padding:28px 0 34px;margin:0 0 22px;min-height:330px;align-items:center}
+:is(#query-page,#calendar-page,#about,#guides-page){padding-top:20px}
+:is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading{padding:12px 0 24px;margin:0 0 22px;min-height:270px;align-items:center}
+:is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading .art-orbit{width:160px;height:160px;transform:scaleX(1.2) rotate(-24deg)}
+:is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading .orbit-two{width:170px;height:170px;transform:scaleX(1.15) rotate(35deg)}
 :is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading .editorial-heading-copy h1{font-family:var(--display-face);font-size:var(--page-title-size);font-weight:800;line-height:1.24;letter-spacing:-.035em;margin:0;max-width:12em}
 :is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading .editorial-kicker{font-family:'CDU Sans',Manrope,Arial,sans-serif;font-size:var(--page-kicker-size);font-weight:700;line-height:1.4;letter-spacing:.2em;margin:0 0 18px}
 :is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading .editorial-heading-copy>p:not(.editorial-kicker){font-size:var(--page-deck-size);font-weight:400;line-height:1.85;margin:18px 0 0;color:#805e60}
 @media(max-width:700px){
  :root{--page-title-size:36px;--page-kicker-size:11px;--page-deck-size:16px}
- :is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading{padding:22px 0 26px;min-height:0;margin:0 0 22px}
+ :is(#query-page,#calendar-page,#about,#guides-page){padding-top:12px}
+ :is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading{padding:10px 0 22px;min-height:0;margin:0 0 22px}
 }

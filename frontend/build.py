@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import shutil
 from pathlib import Path
 
@@ -95,8 +96,12 @@ def build():
     for name in SCRIPTS:
         shutil.copyfile(SRC / 'scripts' / name, ASSETS / name)
 
-    boot = BOOT_SCRIPT.replace('SCRIPTS_PLACEHOLDER', json.dumps([f'assets/{n}' for n in SCRIPTS]))
-    page = template.replace('</head>', '<style>'+BOOT_STYLE+'</style><link rel="stylesheet" href="assets/app.css"></head>')
+    digest = hashlib.sha256((template+css+BOOT_SCRIPT+BOOT_STYLE).encode())
+    for name in ['api.js',*SCRIPTS]:digest.update((SRC/'scripts'/name).read_bytes())
+    version = digest.hexdigest()[:16]
+    boot = BOOT_SCRIPT.replace('SCRIPTS_PLACEHOLDER', json.dumps([f'assets/{n}?v={version}' for n in SCRIPTS]))
+    boot = boot.replace('src="assets/api.js"',f'src="assets/api.js?v={version}"')
+    page = template.replace('</head>', '<style>'+BOOT_STYLE+f'</style><link rel="stylesheet" href="assets/app.css?v={version}"></head>')
     # 启动状态条放在 body 开头
     import re as _re
     page = _re.sub(r'(<body[^>]*>)', lambda m:m.group(1)+BOOT_MARKUP, page, count=1)

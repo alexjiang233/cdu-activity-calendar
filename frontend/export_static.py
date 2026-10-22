@@ -396,7 +396,7 @@ def assemble_site(exported_at: str, snapshot_info: dict) -> dict:
     (assets / 'api.js').write_text(adapter, encoding='utf-8', newline='\n')
 
     boot = frontend_build.BOOT_SCRIPT.replace(
-        'SCRIPTS_PLACEHOLDER', json.dumps([f'assets/{name}' for name in frontend_build.SCRIPTS])
+        'SCRIPTS_PLACEHOLDER', json.dumps([f'assets/{name}?v={build_id}' for name in frontend_build.SCRIPTS])
     )
     boot = boot.replace(
         '<script src="assets/api.js"></script>',
