@@ -8,8 +8,8 @@ from pathlib import Path
 from catalog import workbench, maintenance
 
 
-admin.site.site_header = '成都大学校园活动与指南 · 管理后台'
-admin.site.site_title = '校园活动后台'
+admin.site.site_header = '成大早知道 · 管理后台'
+admin.site.site_title = '成大早知道'
 admin.site.index_title = '内容维护'
 
 

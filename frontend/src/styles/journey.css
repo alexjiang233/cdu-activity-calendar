@@ -1,0 +1,14 @@
+/* Invisible at rest, discoverable by touch and keyboard. No new visible sentence. */
+#about .journey-trigger{appearance:none;position:relative;display:inline;border:0;border-radius:0;background:none;padding:0;margin:0;box-shadow:none;color:inherit;font:inherit;line-height:inherit;letter-spacing:inherit;text-align:inherit;text-decoration:none;vertical-align:baseline;cursor:default;max-width:100%}
+#about .journey-period::before{content:'';position:absolute;left:50%;top:50%;min-width:44px;min-height:44px;width:1em;height:1em;transform:translate(-50%,-50%)}
+#about .journey-subtitle{white-space:normal}
+#about .journey-trigger:focus-visible{outline:2px solid #b18b6b;outline-offset:5px;border-radius:3px}
+#about .journey-armed{cursor:pointer}
+#about .journey-period.journey-armed::after{content:'';position:absolute;inset:-.06em -.1em;border:1px solid currentColor;border-radius:50%;opacity:.3;animation:journey-ink 1.4s ease-in-out infinite;pointer-events:none}
+#about .journey-subtitle.journey-armed{text-decoration:underline;text-decoration-color:#b18b6b80;text-underline-offset:7px;text-decoration-thickness:1px}
+.journey-cue{position:fixed;z-index:160;padding:7px 12px;border:1px solid #dac8bc;border-radius:7px;background:#fffaf3;color:#855c58;font:12px/1.5 system-ui,'Microsoft YaHei',sans-serif;box-shadow:0 4px 16px #6b17230b;pointer-events:none;animation:journey-cue-in .3s ease both}
+.journey-cue[hidden]{display:none}
+body.journey-leaving{pointer-events:none}
+@keyframes journey-ink{50%{opacity:.1;transform:scale(1.1)}}
+@keyframes journey-cue-in{from{opacity:0;translate:0 3px}to{opacity:1;translate:0 0}}
+@media(prefers-reduced-motion:reduce){#about .journey-period.journey-armed::after,.journey-cue{animation:none}}

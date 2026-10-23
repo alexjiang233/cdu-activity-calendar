@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import json
+import os
 import hashlib
 import shutil
 from pathlib import Path
@@ -15,7 +16,12 @@ SRC = HERE / 'src'
 DIST = HERE / 'dist'
 ASSETS = DIST / 'assets'
 
-SCRIPTS = ['core.js', 'calendar-core.js', 'page.js', 'catalog-ui.js', 'calendar-ui.js', 'life.js', 'explore.js']
+# The unpublished journey stays opt-in until separately released.
+INCLUDE_JOURNEY = os.environ.get('CDU_INCLUDE_JOURNEY') == '1'
+SCRIPTS = ['core.js', 'calendar-core.js', 'page.js', 'catalog-ui.js', 'calendar-ui.js', 'life.js', 'explore.js', 'journey.js']
+if not INCLUDE_JOURNEY: SCRIPTS.remove('journey.js')
+EXTRA_ASSETS = {'favicon.svg': SRC / 'brand' / 'favicon.svg'}
+if INCLUDE_JOURNEY: EXTRA_ASSETS['journey.html'] = SRC / 'content' / 'journey.html'
 
 BOOT_STYLE = """
 /* 启动与失败状态：数据未就绪时给出可见反馈，不把空白当成“没有内容” */
@@ -45,7 +51,7 @@ body.is-revealing>header,body.is-revealing>main,body.is-revealing>footer{animati
 @media(prefers-reduced-motion:reduce){.boot-ticket,.boot-line:after,body.is-revealing>header,body.is-revealing>main,body.is-revealing>footer{animation:none}#boot-status.is-leaving{animation:none;opacity:0}}
 """
 
-BOOT_MARKUP = '''<div id="boot-status" role="status" aria-live="polite"><div class="boot-brand">CDU / CAMPUS LIFE</div><div class="boot-scene" aria-hidden="true"><div class="boot-ticket"></div><div class="boot-ticket"></div><div class="boot-ticket"><svg viewBox="0 0 40 40"><rect x="5" y="8" width="30" height="28" rx="5"/><path d="M5 16h30M13 4v8M27 4v8M12 23h5M23 23h5M12 29h5"/></svg></div></div><p class="boot-title">校园，正在展开。</p><div class="boot-line" aria-hidden="true"></div><div class="boot-message">正在准备页面…</div></div><noscript><style>.is-booting{overflow:auto}.is-booting>header,.is-booting>main,.is-booting>footer,.is-booting>.skip{visibility:visible}#boot-status{display:none}</style><p>请启用 JavaScript 以查看校园活动和指南。</p></noscript>'''
+BOOT_MARKUP = '''<div id="boot-status" role="status" aria-live="polite"><div class="boot-brand">成大早知道 / CDU HEADSUP</div><div class="boot-scene" aria-hidden="true"><div class="boot-ticket"></div><div class="boot-ticket"></div><div class="boot-ticket"><svg viewBox="0 0 40 40"><path d="M5 26h30M10 33h20M11 23a9 9 0 0 1 18 0M20 3v5M6 10l4 4M34 10l-4 4"/></svg></div></div><p class="boot-title">校园，正在展开。</p><div class="boot-line" aria-hidden="true"></div><div class="boot-message">正在准备页面…</div></div><noscript><style>.is-booting{overflow:auto}.is-booting>header,.is-booting>main,.is-booting>footer,.is-booting>.skip{visibility:visible}#boot-status{display:none}</style><p>请启用 JavaScript 以查看校园活动和指南。</p></noscript>'''
 
 BOOT_SCRIPT = """
 <script src="assets/api.js"></script>
@@ -90,6 +96,7 @@ BOOT_SCRIPT = """
 def build():
     template = (SRC / 'index.template.html').read_text(encoding='utf-8')
     css = (SRC / 'styles' / 'app.css').read_text(encoding='utf-8') + '\n' + (SRC / 'styles' / 'activity-views.css').read_text(encoding='utf-8')
+    if INCLUDE_JOURNEY: css += '\n' + (SRC / 'styles' / 'journey.css').read_text(encoding='utf-8')
     for name in SCRIPTS:
         if not (SRC / 'scripts' / name).exists():
             raise SystemExit(f'缺少脚本：{name}')
@@ -99,8 +106,12 @@ def build():
     for name in SCRIPTS:
         shutil.copyfile(SRC / 'scripts' / name, ASSETS / name)
 
+    for name, source in EXTRA_ASSETS.items():
+        shutil.copyfile(source, ASSETS / name)
+
     digest = hashlib.sha256((template+css+BOOT_SCRIPT+BOOT_STYLE).encode())
     for name in ['api.js',*SCRIPTS]:digest.update((SRC/'scripts'/name).read_bytes())
+    for source in EXTRA_ASSETS.values():digest.update(source.read_bytes())
     version = digest.hexdigest()[:16]
     boot = BOOT_SCRIPT.replace('SCRIPTS_PLACEHOLDER', json.dumps([f'assets/{n}?v={version}' for n in SCRIPTS]))
     boot = boot.replace('src="assets/api.js"',f'src="assets/api.js?v={version}"')

@@ -394,6 +394,7 @@ def assemble_site(exported_at: str, snapshot_info: dict) -> dict:
 
     template = (SRC / 'index.template.html').read_text(encoding='utf-8')
     css = (SRC / 'styles' / 'app.css').read_text(encoding='utf-8') + '\n' + (SRC / 'styles' / 'activity-views.css').read_text(encoding='utf-8')
+    if frontend_build.INCLUDE_JOURNEY: css += '\n' + (SRC / 'styles' / 'journey.css').read_text(encoding='utf-8')
     for name in frontend_build.SCRIPTS:
         if not (SRC / 'scripts' / name).exists():
             raise SystemExit(f'缺少脚本：{name}')
@@ -406,6 +407,8 @@ def assemble_site(exported_at: str, snapshot_info: dict) -> dict:
         SRC / 'index.template.html',
         SRC / 'styles' / 'app.css',
         SRC / 'styles' / 'activity-views.css',
+        *([SRC / 'styles' / 'journey.css'] if frontend_build.INCLUDE_JOURNEY else []),
+        *frontend_build.EXTRA_ASSETS.values(),
         SRC / 'scripts' / 'api-static.js',
         *[SRC / 'scripts' / name for name in frontend_build.SCRIPTS],
     ]
@@ -423,6 +426,8 @@ def assemble_site(exported_at: str, snapshot_info: dict) -> dict:
     (assets / 'app.css').write_text(css + frontend_build.BOOT_STYLE, encoding='utf-8', newline='\n')
     for name in frontend_build.SCRIPTS:
         shutil.copyfile(SRC / 'scripts' / name, assets / name)
+    for name, source in frontend_build.EXTRA_ASSETS.items():
+        shutil.copyfile(source, assets / name)
     adapter = adapter_template.replace('__CDU_BUILD_REVISION__', build_id)
     (assets / 'api.js').write_text(adapter, encoding='utf-8', newline='\n')
 

@@ -771,3 +771,6 @@ html[data-input-method=keyboard] .global-nav a[aria-current=page]::after{transfo
  :is(#query-page,#calendar-page,#about,#guides-page){padding-top:12px}
  :is(#query-page,#calendar-page,#about,#guides-page)>.editorial-heading{padding:10px 0 22px;min-height:0;margin:0 0 22px}
 }
+
+/* 成大早知道：统一中文品牌与英文辅助标识。 */
+.topbar .brand>span{font-family:var(--body-face,"Microsoft YaHei",sans-serif);font-size:22px;font-weight:700;letter-spacing:.04em;line-height:1.35}.topbar .brand small{font-family:var(--latin-face,system-ui),sans-serif;font-size:11px;letter-spacing:.06em;font-weight:500;margin-top:4px;line-height:1.5}@media(max-width:700px){.topbar .brand>span{font-size:20px}.topbar .brand small{font-size:10px}}
