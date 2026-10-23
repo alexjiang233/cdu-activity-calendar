@@ -1046,3 +1046,16 @@ body.is-revealing>header,body.is-revealing>main,body.is-revealing>footer{animati
 .souvenir-slot{transition:opacity .3s ease}
 .is-collected .souvenir-slot{opacity:0;visibility:hidden}
 .souvenir-printer{padding-top:34px}
+
+/* Reuse the existing paper; do not add a persistent control. */
+.art-about{pointer-events:auto}.art-about>:not(.paper-plane-trigger){pointer-events:none}
+.art-about .paper-plane-trigger{pointer-events:auto;z-index:3}
+.about-paper.paper-plane-trigger{font-family:inherit;text-align:left;color:#6b1723;border:0;cursor:pointer;appearance:none;animation:none;transition:filter .5s,box-shadow .5s}
+.paper-plane-trigger:is(:hover,:focus-visible){filter:brightness(1.04);box-shadow:5px 12px 24px #55162615}
+.paper-plane-trigger:focus-visible{outline:2px solid #a3745c;outline-offset:5px}
+.paper-plane-trigger::after{content:'';position:absolute;right:0;bottom:0;width:0;height:0;border-left:0 solid transparent;border-top:0 solid #b98f7040;transition:border-width .6s}
+.paper-plane-trigger:is(:hover,:focus-visible)::after{border-left-width:18px;border-top-width:18px}
+.plane-folding{filter:opacity(.45)}
+.paper-plane-flight{position:fixed;z-index:12000;width:80px;height:64px;pointer-events:none;will-change:transform,opacity;filter:drop-shadow(0 6px 8px #48131e22)}.paper-plane-flight svg{display:block;width:100%;height:100%;transform:scaleX(-1)}
+.paper-plane-note{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);max-width:calc(100vw - 32px);padding:12px 20px;border:1px solid #ddc8b9;border-radius:8px;background:#fff9ef;color:#6b1723;font:14px/1.7 system-ui;z-index:12000;pointer-events:none;white-space:nowrap}
+@media(prefers-reduced-motion:reduce){.paper-plane-trigger,.paper-plane-trigger::after{transition:none}.paper-plane-flight{display:none}}
