@@ -72,7 +72,7 @@
   (g.sources||[]).forEach(item=>{const line=make('p');if(item.url)line.append(external(item.label,item.url));else line.append(make('span',item.label));if(item.page_ref)line.append(make('span',' · '+item.page_ref));if(item.note)line.append(make('span',' · '+item.note));source.append(line)});
   source.append(make('p','整理于 '+(meta.published_at||'').slice(0,10)+'。这是资料整理日期，不代表已核实当前系统或本学期规定。'));body.append(source);
   if(g.related_service)body.append(local('遇到问题，查校园查询 ↗','#services','life-action'));
-  layout.append(toc,body);article.append(layout);requestAnimationFrame(()=>{document.title=g.title+' · 成大早知道'});
+  layout.append(toc,body);article.append(layout);requestAnimationFrame(()=>{document.title='成大早知道 · '+g.title});
  }
  async function copyPhone(b,value){let copied=false;try{await navigator.clipboard.writeText(value);copied=true}catch(_){const t=make('textarea',value);t.style.cssText='position:fixed;opacity:0';document.body.append(t);t.select();try{copied=document.execCommand('copy')}catch(_){}t.remove();b.focus()}
   b.textContent=copied?'✓':'复制';b.setAttribute('aria-label',copied?'已复制号码 '+value:'复制号码 '+value);document.getElementById('life-copy-status').textContent=copied?'已复制号码 '+value:'无法自动复制，号码为 '+value;setTimeout(()=>{if(b.isConnected){b.textContent='复制';b.setAttribute('aria-label','复制号码 '+value)}},1800)}
