@@ -18,10 +18,12 @@ ASSETS = DIST / 'assets'
 
 # The unpublished journey stays opt-in until separately released.
 INCLUDE_JOURNEY = os.environ.get('CDU_INCLUDE_JOURNEY') == '1'
-SCRIPTS = ['core.js', 'calendar-core.js', 'page.js', 'catalog-ui.js', 'calendar-ui.js', 'life.js', 'explore.js', 'journey.js']
-if not INCLUDE_JOURNEY: SCRIPTS.remove('journey.js')
-EXTRA_ASSETS = {'favicon.svg': SRC / 'brand' / 'favicon.svg'}
-if INCLUDE_JOURNEY: EXTRA_ASSETS['journey.html'] = SRC / 'content' / 'journey.html'
+SCRIPTS = ['core.js', 'calendar-core.js', 'page.js', 'catalog-ui.js', 'calendar-ui.js', 'life.js', 'explore.js', 'journey-scene.js', 'journey.js', 'souvenir.js']
+if not INCLUDE_JOURNEY: SCRIPTS = [name for name in SCRIPTS if name not in {'journey-scene.js','journey.js','souvenir.js'}]
+EXTRA_ASSETS = {'favicon-white.png': SRC / 'brand' / 'favicon-white.png'}
+if INCLUDE_JOURNEY:
+    EXTRA_ASSETS['journey.html'] = SRC / 'content' / 'journey.html'
+    EXTRA_ASSETS['souvenir-art.png'] = SRC / 'brand' / 'souvenir-art.png'
 
 BOOT_STYLE = """
 /* 启动与失败状态：数据未就绪时给出可见反馈，不把空白当成“没有内容” */
@@ -51,7 +53,7 @@ body.is-revealing>header,body.is-revealing>main,body.is-revealing>footer{animati
 @media(prefers-reduced-motion:reduce){.boot-ticket,.boot-line:after,body.is-revealing>header,body.is-revealing>main,body.is-revealing>footer{animation:none}#boot-status.is-leaving{animation:none;opacity:0}}
 """
 
-BOOT_MARKUP = '''<div id="boot-status" role="status" aria-live="polite"><div class="boot-brand">成大早知道 / CDU HEADSUP</div><div class="boot-scene" aria-hidden="true"><div class="boot-ticket"></div><div class="boot-ticket"></div><div class="boot-ticket"><svg viewBox="0 0 40 40"><path d="M5 26h30M10 33h20M11 23a9 9 0 0 1 18 0M20 3v5M6 10l4 4M34 10l-4 4"/></svg></div></div><p class="boot-title">校园，正在展开。</p><div class="boot-line" aria-hidden="true"></div><div class="boot-message">正在准备页面…</div></div><noscript><style>.is-booting{overflow:auto}.is-booting>header,.is-booting>main,.is-booting>footer,.is-booting>.skip{visibility:visible}#boot-status{display:none}</style><p>请启用 JavaScript 以查看校园活动和指南。</p></noscript>'''
+BOOT_MARKUP = '''<div id="boot-status" role="status" aria-live="polite"><div class="boot-brand">成大早知道 / CDU HEADSUP</div><div class="boot-scene" aria-hidden="true"><div class="boot-ticket"></div><div class="boot-ticket"></div><div class="boot-ticket"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><path d="M6 10 18 5v26L6 36Z" fill="#6b1723"/><path d="m22 10 12-5v26l-12 5Z" fill="#6b1723" fill-opacity=".25"/><path d="m22 10 12-5v26l-12 5Z" stroke="#6b1723" stroke-width="1.5" fill="none"/><circle cx="33" cy="2.5" r="1.5" fill="#dfae76"/></svg></div></div><p class="boot-title">校园，正在展开。</p><div class="boot-line" aria-hidden="true"></div><div class="boot-message">正在准备页面…</div></div><noscript><style>.is-booting{overflow:auto}.is-booting>header,.is-booting>main,.is-booting>footer,.is-booting>.skip{visibility:visible}#boot-status{display:none}</style><p>请启用 JavaScript 以查看校园活动和指南。</p></noscript>'''
 
 BOOT_SCRIPT = """
 <script src="assets/api.js"></script>
