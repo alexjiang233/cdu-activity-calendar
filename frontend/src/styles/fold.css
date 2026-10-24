@@ -71,7 +71,8 @@
 #query-page .fold-entry{display:block;padding:22px 0;border:0;border-bottom:1px solid var(--fold-rule);border-radius:0;background:transparent;scroll-margin-top:24px}
 #query-page .fold-entry-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
 #query-page .category-tag{font-size:12px;line-height:1.5;padding:4px 10px;border-radius:4px;font-weight:650}
-#query-page .scope-tag{min-height:32px;font-size:12px;line-height:1.5;border:1px solid var(--fold-rule);background:transparent;padding:4px 8px;border-radius:4px}
+#query-page .scope-tag{min-height:32px;font-size:12px;line-height:1.5;font-weight:650;color:var(--fold-ink);border:1px solid var(--fold-rule);background:var(--fold-tint);padding:4px 8px;border-radius:4px;box-shadow:none}
+#query-page .scope-tag:hover,#query-page .scope-tag:focus-visible{color:var(--fold-white);background:var(--fold-ink);border-color:var(--fold-ink);box-shadow:none}
 #query-page .phase{margin-left:auto;font-size:12px;line-height:1.6;padding:3px 7px;max-width:100%;border-radius:4px;white-space:normal}
 #query-page .fold-entry-head{display:grid;grid-template-columns:minmax(0,1fr) 215px;gap:24px}
 #query-page .fold-entry h3{font-family:inherit;font-weight:700;font-size:21px;line-height:1.5;margin:0 0 10px;text-wrap:pretty;letter-spacing:0}
