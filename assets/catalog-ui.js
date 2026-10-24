@@ -199,7 +199,7 @@
    /* 顶部摘要已经原样写过的句子不再在正文重复，只留补充条款。 */
    const items=group.items.filter(item=>!(officialIntro.test(item.text)&&item.text.length>100)&&!/^为确保[^。]{0,80}(?:顺利|圆满|安全)/.test(item.text)&&!(covered&&(covered.has(normKey(item.text))||covered.has(looseKey(item.text)))));
    if(!items.length)continue;
-   const section=el('section',undefined,'profile-section');section.append(el('h5',profileNames[kind]||'其他说明'));
+   const section=el('section',undefined,'profile-section');section.dataset.kind=kind;section.append(el('h5',profileNames[kind]||'其他说明'));
    const list=el('ul');for(const item of items){const li=el('li',item.text);if(item.locator)li.title=item.locator;list.append(li)}
    section.append(list);parent.append(section);
   }
@@ -396,90 +396,57 @@
   }finally{version._loading=false}
  }
  function card(entry){
-  const serverVersion=entry.selected_source_url?entry.versions.find(v=>v.source_url===entry.selected_source_url):null;
-  const candidates=serverVersion?[serverVersion]:entry.versions.slice(0,1);
-  const groups=yearGroups(entry);
-  const picked=editionSelection.get(entry.id);
-  const pickedVersion=picked?entry.versions.find(v=>v.source_url===picked):null;
-  /* 用户在本卡片点过年份 > 链接指定的通知 > 全局年份筛选 > 默认最近可见年份。全局筛选不能盖住卡片内选择。 */
+  const groups=yearGroups(entry),serverVersion=entry.versions.find(v=>v.source_url===entry.selected_source_url);
+  const picked=editionSelection.get(entry.id),pickedVersion=entry.versions.find(v=>v.source_url===picked);
   let activeYear=yearSelection.get(entry.id);
-  if(!activeYear&&pickedVersion)activeYear=(pickedVersion.year===null||pickedVersion.year===undefined)?'unknown':String(pickedVersion.year);
+  if(!activeYear&&pickedVersion)activeYear=String(pickedVersion.year??'unknown');
   if(!activeYear&&state.year&&groups.some(([y])=>y===state.year))activeYear=state.year;
-  if(!groups.some(([y])=>y===activeYear)){
-   const visible=candidates.map(v=>(v.year===null||v.year===undefined)?'unknown':String(v.year));
-   activeYear=groups.map(([y])=>y).find(y=>visible.includes(y))||groups[0][0];
+  if(!groups.some(([y])=>y===activeYear))activeYear=String((serverVersion||entry.versions[0]).year??'unknown');
+  const yearList=groups.find(([y])=>y===activeYear)?.[1]||groups[0][1];
+  const version=yearList.find(v=>v.source_url===picked)||(yearList.includes(serverVersion)?serverVersion:yearList[0]);
+  const a=el('article',undefined,'entry activity-card fold-entry');a.dataset.id=entry.id;
+  const status=core.phase(version,entry.kind,now());
+  const top=el('div',undefined,'fold-entry-meta'),category=el('span',entry.category_label,'category-tag');category.dataset.activityType=entry.category;top.append(category);
+  for(const level of (version.levels||[]).filter(x=>x!=='unknown')){const b=el('button',catalog.levels[level],'scope-tag');b.type='button';b.addEventListener('click',()=>select('level',level));top.append(b)}
+  top.append(el('span',status.label,'phase '+status.tone));a.append(top);
+  const head=el('div',undefined,'fold-entry-head'),main=el('div',undefined,'fold-entry-main');
+  const h=el('h3'),title=el('button',entry.title,'entry-title-button');title.type='button';title.setAttribute('aria-expanded','false');h.append(title);main.append(h);
+  const audience=version.audience||'参与对象尚未明确，请查看原文';
+  const audienceLine=el('p',undefined,'fold-audience');audienceLine.append(el('span','适合谁'),el('span',audience));audienceLine.title=audience;main.append(audienceLine);
+  main.append(el('p',(version.year?version.year+' 年公告':'年份未明确')+' · '+(version.published?'发布于 '+date(version.published):'发布日期待核实'),'fold-publication'));
+  const dates=el('div',undefined,'fold-dates');
+  function dateRow(label,value,uncertain){const row=el('div',undefined,'fold-date'+(uncertain?' uncertain':''));row.append(el('span',label),el('strong',value));dates.append(row)}
+  if(version.deadline)dateRow(deadlineLabelOf(version),fmtDate(version.deadline,version.deadline_precision),['unverified','conflict'].includes(version.deadline_status)||version.conflict);
+  if(version.stage_start||version.stage_end){const note=version.stage_status==='unverified'?'活动日期待核实':version.stage_status==='conflict'||version.conflict?'活动日期有差异':'活动日期';dateRow(note,[version.stage_start,version.stage_end!==version.stage_start?version.stage_end:null].filter(Boolean).map(x=>fmtDate(x,'day')).join(' — '),note!=='活动日期')}
+  if(!dates.children.length)dateRow('日期未明确','以原文安排为准',true);
+  head.append(main,dates);a.append(head);
+  const d=el('details',undefined,'entry-details'),summary=el('summary');summary.append(el('span','参与详情'),el('span','时间、要求与材料','fold-summary-hint'),el('span','＋','fold-plus'));d.append(summary);
+  const body=el('div',undefined,'detail-content fold-detail');
+  const toolbar=el('div',undefined,'fold-detail-toolbar'),reading=el('strong',(version.year||'历史')+' 年 · 参与详情');
+  function closeDetail(){d.open=false;a.scrollIntoView({block:'start',behavior:reduced.matches?'instant':'smooth'});title.focus({preventScroll:true})}
+  const close=el('button','收起详情 ↑','fold-close');close.type='button';close.addEventListener('click',closeDetail);toolbar.append(reading,close);body.append(toolbar);
+  if(groups.length>1){const switcher=el('div',undefined,'year-switch');switcher.append(el('span','公告年份'));for(const [year] of groups){const b=el('button',year==='unknown'?'年份待核实':year+' 年','year-button');b.type='button';b.setAttribute('aria-pressed',String(year===activeYear));b.addEventListener('click',()=>{yearSelection.set(entry.id,year);editionSelection.delete(entry.id);const next=card(entry);next.querySelector('.entry-details').open=true;swapCard(a,next);hydrate(entry,next._selectedVersion,next);next.querySelector('.year-button[aria-pressed=true]')?.focus({preventScroll:true})});switcher.append(b)}body.append(switcher)}
+  if(yearList.length>1){const label=el('label','本年通知版本','edition-control'),s=el('select');s.setAttribute('aria-label',entry.title+' 同年通知');yearList.forEach(v=>{const o=el('option',versionLabel(v,entry));o.value=v.notice_id;o.selected=v===version;s.append(o)});s.addEventListener('change',()=>{editionSelection.set(entry.id,yearList.find(v=>v.notice_id===s.value).source_url);const next=card(entry);next.querySelector('.entry-details').open=true;swapCard(a,next);hydrate(entry,next._selectedVersion,next)});label.append(s);body.append(label)}
+  const sourcebar=el('div',undefined,'fold-sourcebar');if(safeCduUrl(version.source_url))sourcebar.append(link('核对这份原文 ↗',version.source_url));
+  if(groups.filter(([y])=>y!=='unknown').length>1){const u=new URL(location.href);u.search='';u.searchParams.set('q',entry.title);u.hash='compare';const compare=el('a','比较历年安排 →','fold-compare-link');compare.href=u.href;sourcebar.append(compare)}body.append(sourcebar);
+  if(!version._full){body.append(el('p','正在读取这份通知的完整要求…','fold-detail-loading'))}
+  else {
+   const notices=el('div',undefined,'fold-date-notes');for(const [field,label] of [['deadline','截止'],['stage','活动日期']]){if(version[field+'_note'])notices.append(el('p',label+'说明：'+version[field+'_note']));const ev=version[field+'_evidence'];if(ev?.locator){const evBox=el('details');evBox.append(el('summary',label+'依据 · '+ev.locator),el('blockquote',ev.quote||''));if(safeCduUrl(ev.source_url))evBox.append(link('查看原文',ev.source_url));notices.append(evBox)}}if(notices.children.length)body.append(notices);
+   const details=mergedProfile(version),content=el('div',undefined,'fold-detail-grid');
+   renderGroups(content,details);
+   const audienceSection=[...content.children].find(s=>s.dataset.kind==='audience');if(!audienceSection&&version.audience){const sec=el('section',undefined,'profile-section');sec.dataset.kind='audience';sec.append(el('h5','参与对象'),el('p',version.audience));content.prepend(sec)}
+   const order=['schedule','location','audience','conditions','quota','registration','materials','fees','benefits','content','contact','duties','notes','other'];
+   [...content.children].sort((x,y)=>order.indexOf(x.dataset.kind)-order.indexOf(y.dataset.kind)).forEach(sec=>content.append(sec));
+   const toc=el('nav',undefined,'fold-detail-nav');toc.setAttribute('aria-label','详情章节');
+   for(const sec of content.children){sec.id='detail-'+entry.id+'-'+sec.dataset.kind;const b=el('button',profileNames[sec.dataset.kind]||'说明');b.type='button';b.addEventListener('click',()=>{sec.scrollIntoView({block:'start',behavior:reduced.matches?'instant':'smooth'});sec.tabIndex=-1;sec.focus({preventScroll:true})});toc.append(b)}
+   body.append(toc,content);
+   if(!content.children.length)body.append(el('p','暂无已提取的详细条款，请核对原文。'));
+   if(entry.collegeSelections?.length){const sec=el('section',undefined,'profile-section');sec.append(el('h5','学院内部选拔'));for(const item of entry.collegeSelections){sec.append(el('p',item.text));if(safeCduUrl(item.url))sec.append(link('官方原文',item.url))}body.append(sec)}
+   evidence(body,entry,version);
   }
-  const yearList=groups.find(([y])=>y===activeYear)[1];
-  const chosen=yearList.find(v=>candidates.includes(v))||yearList[0];
-  const version=yearList.find(v=>v.source_url===picked)||(serverVersion&&yearList.includes(serverVersion)?serverVersion:chosen);
-  const status=core.phase(version,entry.kind,now()),a=el('article',undefined,'entry');a.dataset.id=entry.id;const displayTitle=entry.id==='activity-4b6bd9d295d4'?'鹤鸣杯演讲比赛':entry.title;
-  const top=el('div',undefined,'entry-top'),category=el('div',undefined,'entry-category'),categoryName=el('span',entry.category_label,'category-tag');categoryName.dataset.activityType=entry.category;category.append(categoryName);
-  const shownLevels=(version.levels||[]).filter(level=>level!=='unknown');
-  for(const level of shownLevels){const b=el('button',catalog.levels[level],'scope-tag');b.type='button';b.addEventListener('click',()=>select('level',level));category.append(b)}
-  if(!shownLevels.length&&entry.id==='activity-4b6bd9d295d4')category.append(el('span','院级','scope-tag scope-tag-inferred'));
-  else if(!shownLevels.length&&/[一-鿿]{2,10}学院/.test(displayTitle)&&(version.colleges||[]).some(c=>c&&c!=='unknown'))category.append(el('span','院级','scope-tag scope-tag-inferred'))
-  top.append(category,el('span',status.label,'phase '+status.tone));const heading=el('h3'),titleButton=el('button',displayTitle,'entry-title-button');titleButton.type='button';titleButton.setAttribute('aria-expanded','false');titleButton.setAttribute('aria-label',displayTitle+'：展开详情');heading.append(titleButton);a.append(top,heading);
-  const meta=el('div',undefined,'entry-meta');if(version.year)addTag(meta,version.year+' 年','year',String(version.year));const scope=scopeLabel(version,entry);if(scope.label&&!scope.redundant)meta.append(el('span',scope.label,'proof-note'));
-  const detailGroups=mergedProfile(version);
-  const groupTexts=kind=>(detailGroups.get(kind)?.items||[]).map(i=>i.text);
-  const audienceSourceParts=[...new Set([...groupTexts('audience'),version.audience].filter(Boolean))];
-  const audience=conciseAudience(version.audience||audienceSourceParts.join('；'));
-  const audienceDetails=[...new Set(audienceSourceParts.map(audienceDetail).filter(Boolean))]
-   .filter((text,i,all)=>!all.some((other,j)=>i!==j&&other.length>text.length&&normKey(other).includes(normKey(text)))).join('；');
-  if(show('card_audience')&&audience)a.append(el('p','适合谁 · '+audience,'entry-audience compact-clause'));
-  const rawKeyFact=groupTexts('registration')[0]||version.content_profile?.sections?.find(s=>s.kind==='registration')?.items?.[0]?.text||groupTexts('materials')[0]||groupTexts('content')[0]||'';const keyFact=/(参赛者须|选手(?:须|需)|报名者(?:须|需)|须为|必须|应当|需提交|须提交|报名资格|参赛条件|仅限|不得|不具备.*资格|需.{0,6}(提交|加入|填写|报名)|(?:提交|上传|填写|录制|完成).{0,12}(报名|作品|材料|视频|演讲稿|报名表|申请))/.test(rawKeyFact)?'':rawKeyFact;
-  if(entry.id==='activity-4b6bd9d295d4')a.append(el('p','外国语学院初选 · 10月22日 19:00 · 2116教室','entry-takeaway compact-clause'));
-  else if(show('editorial_notes')&&entry.editorial_note)a.append(el('p',entry.editorial_note,'entry-takeaway compact-clause'));
-  else if(keyFact&&keyFact.length<=90&&!/^(?:参与|申请|申报|活动|面向)?对象/.test(keyFact)&&!(audience&&normKey(audience).includes(normKey(keyFact).slice(0,10))))a.append(el('p',keyFact,'entry-takeaway compact-clause'));
-  const timing=cardTiming(version,groupTexts);
-    if(show('card_dates')){if(timing.deadline)a.append(el('p',(timing.deadlineLabel||'原文截止')+' · '+timing.deadline,'compact-date'));if(timing.event)a.append(el('p','活动时间 · '+timing.event,'compact-date'));if(!timing.deadline&&!timing.event)a.append(el('p',(version.year?version.year+' 年':'历史')+'公告 · 未提取到日期','compact-date'))}
-  const d=el('details',undefined,'entry-details');d.append(el('summary','查看详情'+(entry.versions.length>1?' · '+entry.versions.length+' 个公告版本':'')));titleButton.addEventListener('click',()=>{d.open=!d.open});d.addEventListener('toggle',()=>{titleButton.setAttribute('aria-expanded',String(d.open));titleButton.setAttribute('aria-label',displayTitle+(d.open?'：收起详情':'：展开详情'));a.classList.toggle('details-open',d.open);if(d.open)hydrate(entry,version,a)});const body=el('div',undefined,'detail-content');
-  const quickFacts=[];if(audienceDetails&&show('audience'))quickFacts.push(['参与对象',audienceDetails]);if(show('card_dates')&&version.deadline)quickFacts.push([timing.deadlineLabel||'原文所列截止',date(version.deadline,version.deadline_precision)]);const materials=groupTexts('materials');if(materials.length)quickFacts.push(['需交材料',materials.join('；')]);
-  if(quickFacts.length){const quick=el('dl',undefined,'detail-quickfacts');for(const [label,value] of quickFacts){quick.append(el('dt',label),el('dd',value))}body.append(quick)}
-  if(timing.deadlineNote&&(timing.deadlineStatus==='unverified'||timing.deadlineStatus==='conflict'||version.deadline_kind==='notice'))body.append(el('p','日期说明：'+timing.deadlineNote,'profile-status'))
-  if(version.stage_note&&(version.stage_status==='unverified'||version.stage_status==='conflict'))body.append(el('p','活动日期说明：'+version.stage_note,'profile-status'))
-  for(const [label,evidence] of [['截止日期依据',version.deadline_evidence],['活动日期依据',version.stage_evidence]]){if(!evidence||!evidence.locator)continue;const p=el('p',label+'：'+evidence.locator+(evidence.attachment?' · '+evidence.attachment:''),'profile-status');if(evidence.source_url)p.append(' ',link('查看原文',evidence.source_url));body.append(p)}
-  body.append(meta);
-  if(show('editorial_notes')&&entry.editorial_note)body.append(el('h4','补充说明'),el('p',entry.editorial_note));
-  if(show('past_versions')){
-   /* 年份按钮只解决“跨年”；同一年有多份通知时，即使只有一年也必须给选择器。 */
-   if(groups.length>1){
-    const row=el('div',undefined,'year-switch');row.append(el('span','公告年份'));
-    for(const [year] of groups){
-     const b=el('button',year==='unknown'?'年份未明确':year+' 年','year-button');b.type='button';
-     b.setAttribute('aria-pressed',String(year===activeYear));b.setAttribute('aria-label','只看 '+(year==='unknown'?'年份未明确':year+' 年')+' 的公告');
-     b.addEventListener('click',()=>{yearSelection.set(entry.id,year);editionSelection.delete(entry.id);
-       const next=card(entry);const opened=next.querySelector('.entry-details');opened.open=true;swapCard(a,next);hydrate(entry,next._selectedVersion,next)});
-     row.append(b);
-    }
-    body.append(row);
-   }
-   if(yearList.length>1){
-    const label=el('label',undefined,'edition-control');label.append(el('span','同年的通知'));
-    const control=el('select');control.setAttribute('aria-label',entry.title+' 同年各通知');const used=new Map();
-    for(const v of yearList){let optionLabel=versionLabel(v,entry);const count=(used.get(optionLabel)||0)+1;used.set(optionLabel,count);if(count>1)optionLabel+=' · 同源第 '+count+' 份';
-     const option=el('option',optionLabel);option.value=v.source_url;option.selected=v===version;control.append(option)}
-    control.addEventListener('change',()=>{editionSelection.set(entry.id,control.value);
-      const next=card(entry);const opened=next.querySelector('.entry-details');opened.open=true;swapCard(a,next);hydrate(entry,next._selectedVersion,next)});
-    label.append(control);body.append(label);
-   }
-  }
-  /* 顶部摘要已完整展示的栏目不再在正文重复画一遍；只补它没写到的条款。 */
-  const skip=new Set();
-  const covered=new Set();
-  if(audienceDetails&&show('audience'))for(const text of audienceSourceParts){covered.add(normKey(text));covered.add(looseKey(text))}
-  if(materials.length)skip.add('materials');
-  activityProfile(body,version,{groups:detailGroups,skip,covered});if(rawKeyFact&&!body.textContent.includes(rawKeyFact)){body.append(el('h4','报名与参与'),el('p',rawKeyFact))}if(entry.collegeSelections?.length){const box=el('div',undefined,'college-selection');box.append(el('h4','学院内部选拔'));for(const item of entry.collegeSelections){const row=el('p',item.text);if(item.url)row.append(' ',link('官方原文',item.url));box.append(row)}body.append(box)}
-  evidence(body,entry,version);
-  const r=version.source_detail||entry.source_detail;
-  if(show('full_text')&&!detailGroups.size&&r?.requirements){const list=el('ul');for(const text of r.requirements.split(/\n|(?<=[。；])\s*/).filter(Boolean)){if(!noticeVisible(tidy(text),'other'))continue;list.append(el('li',tidy(text)))}if(list.children.length)body.append(list)}
-  const source=el('div',undefined,'entry-source');if(show('published_dates')&&version.published)source.append(el('span','发布于 '+date(version.published)));if(show('source_links')&&safeCduUrl(version.source_url))source.append(link('官方原文',version.source_url));body.append(source);
-  if(show('source_links')&&r?.related_sources?.length){const related=el('details');related.append(el('summary','补充通知'));for(const item of r.related_sources)if(safeCduUrl(item.source_url))related.append(link(item.title,item.source_url));body.append(related)}
-  if(show('editorial_notes')&&r?.notes?.length){const notes=r.notes.filter(n=>!/(?:WorkBuddy|DeepSeek|首筛|人工审核|后续.*提取|原文未提供：)/i.test(n)).map(n=>n.replace(/(?:stage_start|stage_end|deadline_kind)[^；。]*/g,'').replace(/，结束日期不重复写年份，/g,'。').replace(/。；/g,'。'));if(notes.length){const ul=el('ul',undefined,'notice-notes');for(const n of notes)ul.append(el('li',n));body.append(ul)}}
-  d.append(body);a.append(d);a.classList.add('activity-card');
-  const main=el('div',undefined,'activity-card-main'),facts=el('div',undefined,'activity-card-facts');
-  for(const node of [...a.children]){if(node===d)continue;(node.matches('.entry-audience,.compact-date')?facts:main).append(node)}
-  a.prepend(main);if(facts.children.length)a.insertBefore(facts,d);else a.classList.add('without-facts');
+  const end=el('button','读完了，收起并返回这条活动 ↑','fold-detail-end');end.type='button';end.addEventListener('click',closeDetail);body.append(end);d.append(body);a.append(d);
+  title.addEventListener('click',()=>{d.open=!d.open});
+  d.addEventListener('toggle',()=>{title.setAttribute('aria-expanded',String(d.open));a.classList.toggle('details-open',d.open);if(d.open)hydrate(entry,version,a)});
   a._selectedVersion=version;return a;
  }
  const pagerState={page:1};
@@ -522,7 +489,7 @@
    if(!list)return;
    const top=list.getBoundingClientRect().top+window.scrollY-96;
    window.scrollTo({top:Math.max(0,top),behavior:reduced.matches?'instant':'smooth'});
-   const first=list.querySelector('.entry-title-button');
+   const first=list.querySelector('.entry-title-button,.compare-title');if(first&&!first.matches('button'))first.tabIndex=-1;
    if(first)first.focus({preventScroll:true});
   });
  }
@@ -556,33 +523,285 @@
   }).catch(error=>{compareLoads.delete(key);throw error}));
   Object.assign(version,await compareLoads.get(key),{_full:true});
  }
- function comparisonCard(entry){
-  const versions=yearGroups(entry).filter(([year])=>year!=='unknown').map(([,list])=>list[0]).sort((a,b)=>b.year-a.year);
-  if(versions.length<2)return card(entry);
-  let selected=compareSelections.get(entry.id);
-  if(!selected||selected.some(id=>!versions.some(v=>v.notice_id===id))){const newer=versions.find(v=>String(v.year)===state.year)||versions[0],older=versions.find(v=>v.year<newer.year)||versions.find(v=>v!==newer);selected=[older.notice_id,newer.notice_id];compareSelections.set(entry.id,selected)}
-  const article=el('article',undefined,'entry comparison-card');article.dataset.id=entry.id;
-  const tag=el('span',entry.category_label,'category-tag');tag.dataset.activityType=entry.category;const top=el('div',undefined,'entry-top');top.append(tag,el('span','两年对照','comparison-eyebrow'));const heading=el('h3'),title=el('button',entry.title,'entry-title-button');title.type='button';title.setAttribute('aria-expanded','false');heading.append(title);article.append(top,heading);
-  const tools=el('div',undefined,'comparison-tools'),pickers=[],controls=el('div',undefined,'comparison-year-pickers');
-  for(let column=0;column<2;column++){const label=el('label',column===0?'对照年份':'另一年份'),picker=el('select');picker.setAttribute('aria-label',entry.title+' · '+(column===0?'左侧年份':'右侧年份'));for(const v of versions){const option=el('option',v.year+' 年');option.value=v.notice_id;picker.append(option)}picker.value=selected[column];picker.addEventListener('change',()=>{selected[column]=picker.value;compareSelections.set(entry.id,selected);refresh(true)});label.append(picker);controls.append(label);pickers.push(picker)}
-  const switchLabel=el('label',undefined,'comparison-differences'),only=el('input');only.type='checkbox';switchLabel.append(only,document.createTextNode('只看差异'));tools.append(controls,switchLabel);article.append(tools);
-  const summary=el('p','正在对齐两年的通知…','comparison-summary');summary.setAttribute('role','status');const viewport=el('div',undefined,'comparison-viewport'),table=el('table',undefined,'comparison-table');table.setAttribute('aria-label',entry.title+'往届信息对照');viewport.append(table);article.append(summary,viewport);
-  const footer=el('div',undefined,'comparison-footer'),expand=el('button','更多对比项','text-button'),sources=el('div',undefined,'comparison-sources');expand.type='button';expand.setAttribute('aria-expanded','false');footer.append(expand,sources);article.append(footer);let expanded=false,serial=0;
-  function paint(error){
-   const chosen=selected.map(id=>versions.find(v=>v.notice_id===id)),values=chosen.map(comparisonValues),all=compareFields.map(([key,label])=>({key,label,values:values.map(v=>v[key]),status:comparisonState(values.map(v=>v[key]))}));
-   table.replaceChildren();const head=el('thead'),headRow=el('tr');headRow.append(el('th','对比项'));for(const v of chosen){const th=el('th',v.year+' 年');th.scope='col';headRow.append(th)}head.append(headRow);table.append(head);const body=el('tbody');
-   const visible=all.filter((row,i)=>(expanded||i<4)&&(!only.checked||row.status==='changed'));
-   for(const row of visible){const tr=el('tr');tr.dataset.comparisonState=row.status;const th=el('th',row.label);th.scope='row';const flag=el('span',row.status==='same'?'相同':row.status==='changed'?'不同':'待补','comparison-row-state');th.append(flag);tr.append(th);for(const value of row.values){const td=el('td'),text=el('span',value||'未提取','comparison-value');text.title=value||'这份通知暂无已提取信息';td.append(text);tr.append(td)}body.append(tr)}
-   if(!visible.length){const tr=el('tr'),td=el('td','当前显示项暂无已确认差异；资料缺失的项不作判断。');td.colSpan=3;tr.append(td);body.append(tr)}table.append(body);article.classList.toggle('comparison-expanded',expanded);
-   const shown=all.filter((row,i)=>expanded||i<4),count=status=>shown.filter(row=>row.status===status).length;
-   summary.textContent=error?'部分通知未加载成功，请重试。':chosen.some(v=>!v._full)?'先看日期与对象，正在读取完整通知…':count('same')+' 项相同 · '+count('changed')+' 项不同'+(count('unknown')?' · '+count('unknown')+' 项资料待补':'');
-   sources.replaceChildren();for(const v of chosen)if(safeCduUrl(v.source_url))sources.append(link(v.year+' 原文',v.source_url));
-   for(let i=0;i<2;i++){pickers[i].value=selected[i];for(const option of pickers[i].options)option.disabled=option.value===selected[1-i]}
-  }
-  async function refresh(fetchDetails){const ticket=++serial;paint();if(!fetchDetails)return;try{await Promise.all(selected.map(id=>loadComparisonVersion(entry,versions.find(v=>v.notice_id===id))));if(ticket===serial&&article.isConnected)paint()}catch(_){if(ticket!==serial)return;paint(true);let retry=article.querySelector('.comparison-retry');if(!retry){retry=el('button','重试读取','text-button comparison-retry');retry.type='button';retry.addEventListener('click',()=>{retry.remove();refresh(true)});footer.prepend(retry)}}}
-  function toggle(){expanded=!expanded;expand.textContent=expanded?'收起更多项':'更多对比项';expand.setAttribute('aria-expanded',String(expanded));title.setAttribute('aria-expanded',String(expanded));paint();if(!reduced.matches&&table.animate)table.animate([{opacity:.45,transform:'translateY(5px)'},{opacity:1,transform:'translateY(0)'}],{duration:300,easing:'cubic-bezier(.22,1,.36,1)'})}
-  expand.addEventListener('click',toggle);title.addEventListener('click',toggle);only.addEventListener('change',()=>paint());paint();article._loadComparison=()=>refresh(true);return article;
+function comparisonCard(entry){
+ const groups=yearGroups(entry).filter(([year,list])=>year!=='unknown'&&list.length);
+ if(groups.length<2)return card(entry);
+ const years=new Map(groups),versions=groups.flatMap(([,list])=>list);
+ const byId=new Map(versions.map(version=>[String(version.notice_id),version]));
+ const yearOf=version=>String(version.year);
+ const stored=compareSelections.get(entry.id);
+ let chosen=Array.isArray(stored)?stored.map(id=>byId.get(String(id))):[];
+ if(chosen.length!==2||chosen.some(version=>!version)||yearOf(chosen[0])===yearOf(chosen[1])){
+  const newer=(years.get(String(state.year))||groups[0][1])[0];
+  const older=groups.find(([year])=>Number(year)<Number(newer.year))||groups.find(([year])=>year!==yearOf(newer));
+  chosen=[older[1][0],newer];
  }
+ chosen.sort((a,b)=>Number(a.year)-Number(b.year));
+ const remembered=new Map(chosen.map(version=>[yearOf(version),String(version.notice_id)]));
+ const save=()=>compareSelections.set(entry.id,chosen.map(version=>version.notice_id));
+ save();
+ const order=['deadline','schedule','audience','materials','registration','conditions','location','fees','benefits'];
+ const labels=new Map(compareFields);
+ const prefix='fold-compare-'+encodeURIComponent(String(entry.id));
+ const article=el('article',undefined,'entry comparison-card fold-comparison');
+ article.dataset.id=entry.id;
+ const top=el('div',undefined,'entry-top');
+ const category=el('span',entry.category_label,'category-tag');
+ category.dataset.activityType=entry.category;
+ top.append(category,el('span','两年对照','comparison-eyebrow'));
+ const title=el('h3',entry.title,'compare-title');
+ title.id=prefix+'-title';
+ article.setAttribute('aria-labelledby',title.id);
+ article.append(top,title);
+ const yearbar=el('div',undefined,'compare-yearbar'),controls=[];
+ for(let column=0;column<2;column++){
+  const box=el('div',undefined,'compare-year');
+  const label=el('label'),caption=el('span',column===0?'旧年 / 对照年':'较新年');
+  const picker=el('select');
+  picker.setAttribute('aria-label',entry.title+' · '+caption.textContent);
+  for(const [year] of groups){const option=el('option',year+' 年');option.value=year;picker.append(option)}
+  label.append(caption,picker);
+  const noticeLabel=el('label'),noticeCaption=el('span'),noticePicker=el('select');
+  noticeLabel.append(noticeCaption,noticePicker);
+  box.append(label,noticeLabel);yearbar.append(box);
+  controls.push({picker,noticeLabel,noticeCaption,noticePicker});
+  picker.addEventListener('change',()=>{
+   const year=picker.value;
+   if(!years.has(year)||year===yearOf(chosen[1-column])){syncControls();return}
+   const version=byId.get(remembered.get(year))||years.get(year)[0];
+   chosen[column]=version;
+   chosen.sort((a,b)=>Number(a.year)-Number(b.year));
+   remembered.set(year,String(version.notice_id));
+   save();syncControls();
+   controls[chosen.indexOf(version)].picker.focus();
+   refresh();
+  });
+  noticePicker.addEventListener('change',()=>{
+   const version=byId.get(noticePicker.value);
+   if(!version||yearOf(version)!==yearOf(chosen[column])){syncControls();return}
+   chosen[column]=version;remembered.set(yearOf(version),String(version.notice_id));
+   save();syncControls();refresh();
+  });
+ }
+ article.append(yearbar);
+ const status=el('p',undefined,'comparison-summary sr-only');
+ status.setAttribute('role','status');status.setAttribute('aria-live','polite');status.setAttribute('aria-atomic','true');
+ const warning=el('p',undefined,'compare-warning');warning.hidden=true;
+ const badges=el('nav',undefined,'compare-badges');badges.setAttribute('aria-label',entry.title+' · 对照分组');
+ const content=el('div',undefined,'compare-content');
+ const differences=el('section',undefined,'compare-group compare-differences');
+ const differenceHeading=el('h3','两年不同之处');
+ const commons=el('section',undefined,'compare-group compare-common');
+ const commonHeading=el('h3','两年相同');
+ const missing=el('details',undefined,'compare-group compare-missing');
+ const missingHeading=el('summary','资料待补 / 资料待核实');
+ const differenceBody=el('div'),commonBody=el('div'),missingBody=el('div');
+ const sections=[differences,commons,missing],headings=[differenceHeading,commonHeading,missingHeading];
+ const badgeButtons=[];
+ sections.forEach((section,index)=>{
+  section.id=prefix+'-'+['differences','common','missing'][index];
+  headings[index].id=section.id+'-heading';
+  if(index<2){headings[index].tabIndex=-1;section.setAttribute('aria-labelledby',headings[index].id)}
+  const button=el('button',undefined,'text-button');button.type='button';
+  button.setAttribute('aria-controls',section.id);
+  button.addEventListener('click',()=>{
+   if(index===2)missing.open=true;
+   headings[index].focus({preventScroll:true});
+   section.scrollIntoView({block:'start',behavior:reduced.matches?'instant':'smooth'});
+  });
+  badgeButtons.push(button);badges.append(button);
+ });
+ differences.append(differenceHeading,el('p','表述不同 ≠ 规则改变，请结合两份原文核对。','compare-note'),differenceBody);
+ commons.append(commonHeading,commonBody);
+ missing.append(missingHeading,missingBody);content.append(...sections);
+ const bottom=el('div',undefined,'compare-bottom');
+ const retry=el('button','重试读取','text-button comparison-retry');retry.type='button';retry.hidden=true;
+ const sources=el('div',undefined,'comparison-sources');
+ const method=el('details',undefined,'compare-method');method.append(el('summary','对照口径'),el('p','仅规范化空白与标点后比较提取文字；完全相等才合并。差异是阅读线索，不代表已经确认的规则变化。缺项、未加载和日期待核实不参与比较。'));
+ bottom.append(retry,sources,method);
+ article.append(status,warning,badges,content,bottom);
+ let serial=0,started=false,loading=false,pending=null,pendingKey='',motion=null;
+
+ function syncControls(){
+  chosen.forEach((version,index)=>{
+   const control=controls[index],year=yearOf(version),list=years.get(year);
+   control.picker.value=year;
+   for(const option of control.picker.options)option.disabled=option.value===yearOf(chosen[1-index]);
+   control.noticeCaption.textContent=year+' 年通知';
+   control.noticePicker.setAttribute('aria-label',entry.title+' · '+year+' 年通知');
+   control.noticePicker.replaceChildren();
+   for(const notice of list){
+    const text=[notice.title||entry.title,notice.edition_label,notice.published].filter(Boolean).join(' · ');
+    const option=el('option',text+'（通知 '+notice.notice_id+'）');
+    option.value=String(notice.notice_id);control.noticePicker.append(option);
+   }
+   control.noticePicker.value=String(version.notice_id);control.noticeLabel.hidden=list.length<2;
+  });
+  sources.replaceChildren();
+  for(const version of chosen){
+   const row=el('div',undefined,'compare-source');
+   row.append(el('span',version.year+' 年 · '+(version.title||entry.title)));
+   if(safeCduUrl(version.source_url))row.append(link(version.year+' 年官方原文',version.source_url));
+   if(version.source_url){
+    const url=new URL(location.href);
+    url.search='';url.searchParams.set('q',entry.title);url.searchParams.set('edition',version.source_url);url.hash='all';
+    row.append(link(version.year+' 年完整版本',url.href));
+   }else row.append(el('span','原文链接待补'));
+   sources.append(row);
+  }
+ }
+ function animate(){
+  if(reduced.matches||!content.animate)return;
+  motion?.cancel();
+  motion=content.animate([{opacity:.55,transform:'translateY(4px)'},{opacity:1,transform:'translateY(0)'}],{duration:180,easing:'ease-out'});
+ }
+ function uncertain(version,key){
+  const dateStatus=key==='deadline'?version.deadline_status:key==='schedule'?version.stage_status:'';
+  return Boolean(version.conflict)||dateStatus==='unverified'||dateStatus==='conflict';
+ }
+ function rawNotes(value){
+  if(Array.isArray(value))return value.flatMap(rawNotes);
+  if(typeof value==='string')return value.trim()?[value]:[];
+  if(value&&typeof value==='object')return rawNotes(value.note||value.text||value.message);
+  return [];
+ }
+ function notesFor(version,key){
+  const notes=[];
+  if(key==='deadline')notes.push(...rawNotes(version.deadline_note));
+  if(key==='schedule')notes.push(...rawNotes(version.stage_note));
+  if(uncertain(version,key)){
+   notes.push(...rawNotes(version.note),...rawNotes(version.notes));
+   if(version.conflict)notes.push(...rawNotes(version.conflict),...rawNotes(version.conflict_note),...rawNotes(version.source_detail?.notes));
+  }
+  return [...new Set(notes)];
+ }
+ function fieldValue(version,key,values){
+  const value=String(values[key]||'');
+  if(!uncertain(version,key))return value;
+  // comparisonValues suppresses conflicted dates. Keep raw values here, without validating them.
+  const raw=key==='deadline'?version.deadline:key==='schedule'?[version.stage_start,version.stage_end].filter(Boolean).join(' — '):'';
+  return [value,raw?'原始日期（未核实）：'+raw:''].filter(Boolean).join('\n');
+ }
+ function paired(row){
+  const pair=el('div',undefined,'compare-pair');
+  chosen.forEach((version,index)=>{
+   const side=el('div',undefined,'compare-side');
+   side.append(el('span',version.year+' 年','compare-year-label'));
+   if(uncertain(version,row.key)){
+    const dateStatus=row.key==='deadline'?version.deadline_status:version.stage_status;
+    const reason=version.conflict?'通知标有冲突':dateStatus==='conflict'?'日期有冲突':'日期待核实';
+    side.append(el('p','资料待核实：'+reason+'，本项不参与差异或共性判断。','compare-note'));
+   }
+   if(!version._full)side.append(el('p','完整通知未加载，以下仅为已知摘录，请重试读取。','compare-note'));
+   side.append(el('p',row.values[index]||'本通知暂无已提取信息，不能据此认定没有要求。','comparison-value'));
+   for(const note of row.notes[index])side.append(el('p','原始说明：'+note,'compare-note'));
+   pair.append(side);
+  });
+  return pair;
+ }
+ function fieldArticle(row){
+  const item=el('article',undefined,row.status==='changed'?'compare-change':'compare-pending');
+  item.dataset.field=row.key;item.dataset.comparisonState=row.status;
+  const heading=el('h4',row.label);heading.tabIndex=-1;item.append(heading);
+  if(row.status!=='changed')item.append(el('p',row.status==='unverified'?'资料待核实':'资料待补','comparison-row-state'));
+  if(row.values.some((value,index)=>value.length+row.notes[index].join('').length>260)){
+   const preview=paired({...row,values:row.values.map(value=>value.length>120?value.slice(0,120)+'…':value),notes:[[],[]]});
+   const full=el('details',undefined,'compare-full');
+   const summary=el('summary','展开完整条款');
+   summary.setAttribute('aria-label',row.label+' · 展开两年完整条款');
+   full.append(summary,paired(row));item.append(preview,full);
+   full.addEventListener('toggle',()=>{preview.hidden=full.open;summary.textContent=full.open?'收起完整条款':'展开完整条款'});
+  }else item.append(paired(row));
+  return item;
+ }
+ function paintWaiting(message){
+  motion?.cancel();
+  status.textContent=message;content.setAttribute('aria-busy',String(loading));
+  warning.hidden=true;missing.open=false;
+  missingHeading.textContent='资料待补 / 资料待核实';
+  differenceBody.replaceChildren(el('p',message));
+  commonBody.replaceChildren(el('p','完整通知读取后再判断共性。'));
+  missingBody.replaceChildren(el('p','尚未对齐资料，不把未加载内容当成缺失或变化。'));
+  badgeButtons.forEach((button,index)=>{button.textContent=['差异 —','共性 —','待核实 / 待补 —'][index];button.disabled=true});
+ }
+ function paintResults(failed){
+  content.setAttribute('aria-busy','false');
+  const values=chosen.map(comparisonValues),complete=chosen.every(version=>version._full);
+  const rows=order.map(key=>{
+   const texts=chosen.map((version,index)=>fieldValue(version,key,values[index]));
+   const uncertainPair=chosen.some(version=>uncertain(version,key));
+   return {key,label:labels.get(key)||key,values:texts,notes:chosen.map(version=>notesFor(version,key)),
+    status:uncertainPair?'unverified':!complete?'unknown':comparisonState(texts)};
+  });
+  const changed=rows.filter(row=>row.status==='changed'),same=rows.filter(row=>row.status==='same');
+  const unknown=rows.filter(row=>row.status==='unknown'),unverified=rows.filter(row=>row.status==='unverified');
+  const pendingRows=rows.filter(row=>row.status==='unknown'||row.status==='unverified');
+  differenceBody.replaceChildren(...changed.slice(0,3).map(fieldArticle));
+  if(!changed.length)differenceBody.append(el('p',complete?'当前所选通知暂无可确认的文字差异；待补、待核实项不参与判断。':'完整通知尚未齐备，暂不判断差异。'));
+  if(changed.length>3){
+   const more=el('div',undefined,'compare-more');more.id=prefix+'-more';more.hidden=true;
+   more.append(...changed.slice(3).map(fieldArticle));
+   const expand=el('button','再看其余 '+(changed.length-3)+' 项','text-button');expand.type='button';
+   expand.setAttribute('aria-controls',more.id);expand.setAttribute('aria-expanded','false');
+   expand.addEventListener('click',()=>{
+    more.hidden=!more.hidden;expand.setAttribute('aria-expanded',String(!more.hidden));
+    expand.textContent=more.hidden?'再看其余 '+(changed.length-3)+' 项':'收起其余 '+(changed.length-3)+' 项';
+    if(!more.hidden)more.firstElementChild.firstElementChild.focus({preventScroll:true});
+    animate();
+   });
+   differenceBody.append(more,expand);
+  }
+  const commonText=el('p');
+  if(same.length){
+   commonText.append('两年相同（'+chosen.map(version=>version.year+' 年').join(' / ')+'）：');
+   same.forEach((row,index)=>{
+    if(index)commonText.append('；');
+    commonText.append(el('strong',row.label+'：'),document.createTextNode(row.values[0]));
+   });
+  }else commonText.textContent=complete?'暂无可合并的相同文字。':'完整通知尚未齐备，暂不判断共性。';
+  commonBody.replaceChildren(commonText);
+  missing.open=false;missingHeading.textContent='资料待补 '+unknown.length+' 项 / 资料待核实 '+unverified.length+' 项';
+  missingBody.replaceChildren(el('p','空值不作差异；保留每一边的已知文字。日期待核实、日期冲突或通知冲突均不计入差异与共性。','compare-note'),...pendingRows.map(fieldArticle));
+  if(!pendingRows.length)missingBody.append(el('p','当前所选两份通知没有待补或待核实字段。'));
+  warning.hidden=!unverified.length;
+  warning.textContent=unverified.length+' 项资料待核实，不参与差异或共性判断；展开下方分组可查看原始日期和说明。';
+  const counts=[changed.length,same.length,pendingRows.length];
+  badgeButtons.forEach((button,index)=>{
+   button.disabled=false;
+   button.textContent=index===2?'待核实 '+unverified.length+' / 待补 '+unknown.length:['差异 ','共性 '][index]+counts[index];
+  });
+  status.textContent=failed?'部分通知读取失败；保留已知摘录，暂不判断差异与共性。请重试读取。':changed.length+' 项表述不同 · '+same.length+' 项文字相同 · '+unverified.length+' 项待核实 · '+unknown.length+' 项待补';
+  retry.hidden=!failed;retry.disabled=false;
+ }
+ function refresh(){
+  const key=JSON.stringify(chosen.map(version=>String(version.notice_id)));
+  if(loading&&pendingKey===key)return pending;
+  const ticket=++serial,snapshot=chosen.slice();
+  started=true;loading=true;pendingKey=key;retry.disabled=true;
+  paintWaiting('正在读取所选 '+snapshot.map(version=>version.year+' 年').join(' / ')+' 的完整通知…');
+  pending=Promise.allSettled(snapshot.map(version=>loadComparisonVersion(entry,version))).then(results=>{
+   if(ticket!==serial)return;
+   loading=false;pending=null;
+   const retryFocused=document.activeElement===retry;
+   syncControls();
+   const failed=results.some(result=>result.status==='rejected');
+   paintResults(failed);animate();
+   if(retryFocused&&!failed)differenceHeading.focus({preventScroll:true});
+  });
+  return pending;
+ }
+ retry.addEventListener('click',()=>refresh());
+ // The existing IntersectionObserver observes .comparison-card and calls this hook.
+ article._loadComparison=()=>{
+  if(started&&!loading&&chosen.every(version=>version._full))return Promise.resolve();
+  return refresh();
+ };
+ syncControls();
+ if(chosen.every(version=>version._full))paintResults(false);
+ else paintWaiting('进入此卡片后读取所选两年的通知；其余年份与同年通知按需加载。');
+ return article;
+}
+
  function paintResults(list,rows,previous){
   lastRows=rows;
   compareObserver?.disconnect();list.dataset.view=state.view;list.replaceChildren(...rows.map(state.view==='compare'?comparisonCard:card));
@@ -607,7 +826,7 @@
   list.append(nav);
  }
  async function render(){const request=++uiRequest;SitePages.show(state.view);if(['home','about','calendar','guides'].includes(state.view))return;const list=document.getElementById('catalog-list');const previous=new Map([...list.querySelectorAll('article')].map(n=>[n.dataset.id,n.getBoundingClientRect()]));document.getElementById('view-description').classList.toggle('sr-only',!['registration','compare'].includes(state.view));const results=document.getElementById('results');results.setAttribute('aria-busy','true');list.inert=true;document.getElementById('count').textContent='正在查找活动…';const data=await loadRows();if(request!==uiRequest)return;results.removeAttribute('aria-busy');list.inert=false;if(!data)return;const rows=serverRows;document.getElementById('result-title').textContent='活动列表';document.getElementById('count').textContent=({discover:'精选活动',all:'全部活动',registration:'当前报名 / 提交',compare:'往届对比'}[state.view]||'活动')+' · '+serverCount+' 项结果';
-  document.getElementById('view-description').textContent=state.view==='compare'?'两年并排，看相同与不同。先看四项，更多要求按需展开。':state.view==='registration'?'只列原文写明、今天还未到期的学生报名或作品提交截止；学院汇总/推荐节点和无原文依据的日期不纳入。日期不明确的记录仍可在全部活动里查看。': '优先看需要组队、准备作品或提出申请的竞赛、项目、实践与招募。时间和资格请回到原文确认。';
+  document.getElementById('view-description').textContent=state.view==='compare'?'只对齐所选两份通知：相同表述合并，其他差异逐项核对，不把缺失当作变化。':state.view==='registration'?'只列原文写明、今天还未到期的学生报名或作品提交截止；学院汇总/推荐节点和无原文依据的日期不纳入。日期不明确的记录仍可在全部活动里查看。': '优先看需要组队、准备作品或提出申请的竞赛、项目、实践与招募。时间和资格请回到原文确认。';
   paintResults(list,rows,previous);if(data.error){list.append(errorBlock(data.error))}else if(!rows.length){const e=el('div',undefined,'empty');e.append(el('h3','没有匹配的活动'),el('p',state.view==='registration'?'当前没有原文写明、且尚未到期的报名或提交机会。可以清除筛选，或到全部活动按月份查找。':state.month==='unknown'?'当前类型没有日期待补的记录。':state.month?'这个月份暂未收录匹配记录，试试全年或其他类型。':'试试其他类型，或清除筛选。'));if(state.month){const all=el('button','查看全年','text-button');all.type='button';all.addEventListener('click',()=>select('month',''));e.append(all)}if(state.interest!=='any'){const any=el('button','不限学院查看','text-button');any.type='button';any.addEventListener('click',()=>{try{localStorage.removeItem('cdu-college-preference')}catch{}select('interest','any')});e.append(any)}const b=el('button','清除全部筛选','primary-button');b.type='button';b.addEventListener('click',reset);e.append(b);list.append(e)}
   const tags=document.getElementById('active-tags');tags.replaceChildren();if(state.interest!=='any'){const b=el('button','适合 '+catalog.colleges[state.interest]+' ×','filter-tag');b.addEventListener('click',()=>{try{localStorage.removeItem('cdu-college-preference')}catch{}select('interest','any')});tags.append(b)}
   for(const key of ['q','college','level','year','category','phase','month']){if(!state[key])continue;const values=key==='category'?state.category.split(','):[state[key]];for(const value of values){const text=key==='q'?'搜索：'+value:key==='category'?categories[value]:key==='month'?(value==='unknown'?'日期待补':value+'月')+' · '+(state.month_basis==='seasonal'?'往年参与':state.month_basis==='deadline'?'所列截止':'举办时间'):document.getElementById(key).selectedOptions[0]?.textContent||value;const b=el('button',text,'filter-tag');b.type='button';b.append(el('span','×'));b.setAttribute('aria-label','移除筛选：'+text);b.addEventListener('click',()=>select(key,key==='category'?state.category.split(',').filter(k=>k!==value).join(','):''));tags.append(b)}}
@@ -630,4 +849,39 @@
  addEventListener('resize',moveNav);
 
  readState();syncControls();render();
+})();
+
+(() => {
+ 'use strict';
+ const page=document.getElementById('query-page');
+ const original=document.querySelector('.explore-controls');
+ const search=original.querySelector('.searchbox');
+ const searchLabel=document.querySelector('label[for=query]');
+ const workspace=page.querySelector('.explore-workspace');
+ const make=(tag,text,cls)=>{const e=document.createElement(tag);if(text)e.textContent=text;if(cls)e.className=cls;return e};
+ const band=make('div',null,'fold-search-band');band.append(searchLabel,search);
+ const trigger=make('button','筛选条件','fold-filter-trigger');trigger.type='button';trigger.setAttribute('aria-haspopup','dialog');band.append(trigger);workspace.before(band);
+ const sidebar=make('div',null,'fold-sidebar');original.replaceWith(sidebar);sidebar.append(original);
+ const cap=make('div',null,'fold-filter-cap');cap.append(make('span','缩小范围'),make('small','FILTER INDEX'));original.prepend(cap);
+ const presets=make('div',null,'fold-presets');presets.append(make('span','试着找'));
+ for(const [label,q,hash] of [['飞盘比赛','飞盘','all'],['跆拳道往届','跆拳道','compare'],['学院推荐节点','川渝青年说','all']]){const a=make('a',label);const url=new URL(location.href);url.search='';url.searchParams.set('q',q);url.hash=hash;a.href=url.href;presets.append(a)}band.after(presets);
+ const dialog=make('dialog',null,'fold-filter-dialog');dialog.setAttribute('aria-labelledby','fold-filter-title');
+ const top=make('div',null,'fold-filter-dialog-head'),heading=make('h2','筛选活动');heading.id='fold-filter-title';const close=make('button','关闭 ×','fold-close');close.type='button';top.append(heading,close);
+ const handle=make('div',null,'fold-sheet-handle');handle.setAttribute('aria-hidden','true');
+ const host=make('div',null,'fold-filter-host');const done=make('button','查看结果','fold-filter-done');done.type='button';dialog.append(handle,top,host,done);document.body.append(dialog);
+ const mobile=matchMedia('(max-width: 760px)'),reduced=matchMedia('(prefers-reduced-motion: reduce)');let previousOverflow='',motion=null,closing=false,returnFocus=trigger,afterClose=null;
+ function openFilters(e){if(dialog.open)return;returnFocus=e?.currentTarget||trigger;previousOverflow=document.body.style.overflow;host.append(original);dialog.showModal();document.body.style.overflow='hidden';close.focus({preventScroll:true});if(!reduced.matches)motion=dialog.animate([{transform:'translateY(105%)'},{transform:'translateY(0)'}],{duration:440,easing:'cubic-bezier(.22,1,.36,1)'})}
+ function closeFilters(callback){if(!dialog.open||closing)return;if(typeof callback==='function')afterClose=callback;closing=true;const start=getComputedStyle(dialog).transform;motion?.cancel();dialog.dataset.closing='';if(reduced.matches){dialog.close();return}motion=dialog.animate([{transform:start},{transform:'translateY(105%)'}],{duration:240,easing:'cubic-bezier(.4,0,1,1)',fill:'forwards'});motion.finished.then(()=>{if(dialog.open)dialog.close()}).catch(()=>{})}
+ dialog.addEventListener('cancel',e=>{e.preventDefault();closeFilters()});
+ dialog.addEventListener('close',()=>{motion?.cancel();motion=null;closing=false;delete dialog.dataset.closing;sidebar.append(original);document.body.style.overflow=previousOverflow;returnFocus.focus({preventScroll:true});const callback=afterClose;afterClose=null;callback?.()});
+ trigger.addEventListener('click',openFilters);close.addEventListener('click',()=>closeFilters());done.addEventListener('click',()=>closeFilters(()=>document.getElementById('results').scrollIntoView({block:'start',behavior:'instant'})));
+ dialog.addEventListener('click',e=>{if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)closeFilters()}});
+ mobile.addEventListener('change',()=>{if(!mobile.matches)closeFilters()});
+ window.addEventListener('hashchange',()=>closeFilters());
+ const type=document.getElementById('type-panel');if(!mobile.matches)type.open=true;
+ const count=document.getElementById('count'),tags=document.getElementById('active-tags');
+ function sync(){const n=tags.querySelectorAll('button').length;trigger.textContent='筛选'+(n?' · '+n:'');done.textContent='查看结果 · '+count.textContent.replace(/^.*?·\s*/,'');const compare=location.hash==='#compare';page.dataset.foldView=compare?'compare':'list';document.getElementById('query-heading-title').textContent=compare?'这次，有什么不同？':'找到下一次参与。';page.querySelector('.editorial-deck').textContent=compare?'选两年，先看不同，再看那些没变的要求。':'先找到感兴趣的事，再展开参与的具体要求。'}
+ new MutationObserver(sync).observe(count,{childList:true,subtree:true});new MutationObserver(sync).observe(tags,{childList:true});sync();
+ const dock=make('nav',null,'fold-mobile-dock');dock.setAttribute('aria-label','浏览快捷操作');
+ const filter=make('button','调整筛选'),up=make('button','回到结果 ↑');filter.type=up.type='button';filter.addEventListener('click',openFilters);up.addEventListener('click',()=>document.getElementById('results').scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion:reduce)').matches?'instant':'smooth'}));dock.append(filter,up);document.body.append(dock);
 })();

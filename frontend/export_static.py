@@ -393,8 +393,7 @@ def assemble_site(exported_at: str, snapshot_info: dict) -> dict:
     import build as frontend_build
 
     template = (SRC / 'index.template.html').read_text(encoding='utf-8')
-    css = (SRC / 'styles' / 'app.css').read_text(encoding='utf-8') + '\n' + (SRC / 'styles' / 'activity-views.css').read_text(encoding='utf-8')
-    if frontend_build.INCLUDE_JOURNEY: css += '\n' + (SRC / 'styles' / 'journey.css').read_text(encoding='utf-8')
+    css = frontend_build.compose_styles()
     for name in frontend_build.SCRIPTS:
         if not (SRC / 'scripts' / name).exists():
             raise SystemExit(f'缺少脚本：{name}')
@@ -407,6 +406,7 @@ def assemble_site(exported_at: str, snapshot_info: dict) -> dict:
         SRC / 'index.template.html',
         SRC / 'styles' / 'app.css',
         SRC / 'styles' / 'activity-views.css',
+        *([SRC / 'styles' / 'fold.css'] if (SRC / 'styles' / 'fold.css').exists() else []),
         *([SRC / 'styles' / 'journey.css'] if frontend_build.INCLUDE_JOURNEY else []),
         *frontend_build.EXTRA_ASSETS.values(),
         SRC / 'scripts' / 'api-static.js',

@@ -95,10 +95,17 @@ BOOT_SCRIPT = """
 """
 
 
-def build():
-    template = (SRC / 'index.template.html').read_text(encoding='utf-8')
+def compose_styles():
     css = (SRC / 'styles' / 'app.css').read_text(encoding='utf-8') + '\n' + (SRC / 'styles' / 'activity-views.css').read_text(encoding='utf-8')
     if INCLUDE_JOURNEY: css += '\n' + (SRC / 'styles' / 'journey.css').read_text(encoding='utf-8')
+    fold = SRC / 'styles' / 'fold.css'
+    if fold.exists(): css = '@layer baseline {\n' + css + '\n}\n' + fold.read_text(encoding='utf-8')
+    return css
+
+
+def build():
+    template = (SRC / 'index.template.html').read_text(encoding='utf-8')
+    css = compose_styles()
     for name in SCRIPTS:
         if not (SRC / 'scripts' / name).exists():
             raise SystemExit(f'缺少脚本：{name}')
