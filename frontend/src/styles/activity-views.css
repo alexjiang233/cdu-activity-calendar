@@ -168,3 +168,8 @@
 .updates-link-copy{display:flex;flex-direction:column;gap:3px}.updates-link-copy small{font-size:10px;letter-spacing:.12em;color:#8c6c62}.updates-link-copy strong{font-size:23px;font-weight:650}.updates-link-copy>span{font-size:13px;color:#856769}.updates-link-meta{margin-left:auto;font-size:11px;color:#8b6f67;white-space:nowrap;display:flex;gap:24px;align-items:center}.updates-link-meta b{font-size:25px;font-weight:400;transition:transform .3s}.about-updates-link:hover .updates-link-meta b{transform:translate(3px,-3px)}
 @media(max-width:700px){.about-updates-link{gap:14px;padding:20px 17px;margin:20px 0 28px;border-radius:14px}.updates-link-copy strong{font-size:21px}.updates-link-copy>span{font-size:12px}.updates-link-meta{gap:9px}.updates-link-meta b{font-size:22px}.updates-link-mark{width:32px;gap:3px}.updates-link-mark i{width:9px}.updates-link-copy small{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.about-updates-link,.about-updates-link *{transition:none!important;transform:none!important}}
+
+/* One shared website version beside the content database revision. */
+.footer .footer-versions{display:flex;align-items:center;justify-content:flex-end;gap:8px 18px;flex-wrap:wrap;flex:none}.footer-versions>span{white-space:nowrap;font-variant-numeric:tabular-nums}
+.updates-link-meta{font-size:14px;font-weight:700;color:#6b1723}
+@media(max-width:700px){.footer .footer-versions{justify-content:flex-start;gap:6px 16px;width:100%}.updates-link-meta{font-size:13px}}

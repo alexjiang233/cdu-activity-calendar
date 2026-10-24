@@ -6,7 +6,7 @@ window.CduProjection = window.CduProjection || {
 
 window.CduApi = (() => {
   'use strict';
-  const REVISION = 'rev-static-20261024-f0b7c87b4a';
+  const REVISION = 'rev-static-20261024-e1ebab3ade';
   const FIXED_NOW = (() => {
     try {
       const raw = globalThis.CDU_STATIC_NOW;

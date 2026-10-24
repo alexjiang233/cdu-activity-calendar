@@ -1,158 +1,316 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#46131f"><title>成大早知道 · 来时路</title><style>:root{--paper:#fbf6ee;--ink:#372a2c;--red:#6b1723;--muted:#8d7873;--line:#ddcabe;--gold:#be8a54;--serif:'Noto Serif SC','Songti SC','SimSun',serif}*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:60px}body{margin:0;background:var(--paper);color:var(--ink);font:16px/2 'Microsoft YaHei','PingFang SC',system-ui,sans-serif}::selection{background:#dfbd9c;color:var(--red)}a{color:inherit}.reading-progress{position:fixed;left:0;top:0;height:3px;width:100%;transform:scaleX(0);transform-origin:left;background:var(--gold);z-index:30}.reader-nav{position:absolute;inset:0 0 auto;z-index:4;padding:24px clamp(24px,5vw,80px);display:flex;justify-content:space-between;align-items:center;font:11px/1.5 system-ui;letter-spacing:.1em;color:#dec8b7}.journey-return{padding:9px 16px;border:1px solid #e6c3a945;border-radius:30px;text-decoration:none;font-size:12px;letter-spacing:0}.journey-return:hover{background:#ffe8cc15}.journey-return:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offset:5px}
+
 .top{min-height:650px;position:relative;display:flex;align-items:center;overflow:hidden;background:#46131f;color:#f8ead8;padding:150px max(32px,calc((100vw - 1120px)/2)) 110px}.top:after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 90% 80%,#a0553e40,transparent 60%);pointer-events:none}.top-copy{position:relative;z-index:2;width:100%}.eyebrow{font:11px/1.6 system-ui;letter-spacing:.3em;color:#d0a681;margin:0 0 32px}.top h1{font:500 clamp(44px,6vw,82px)/1.3 var(--serif);letter-spacing:.025em;margin:0 0 30px}.top h1 span{display:block}.deck{max-width:540px;font-size:14px;line-height:2.05;color:#d8bdb0;margin:0}.signature{font:italic 18px/1.5 Georgia,var(--serif);margin:32px 0 0;color:#d2ae86}.hero-orbit{position:absolute;width:520px;height:520px;border:1px solid #dcb6922c;border-radius:50%;right:-70px;bottom:-100px;transform:rotate(-18deg);pointer-events:none}.hero-orbit:before,.hero-orbit:after{content:'';position:absolute;inset:46px;border:1px solid #dcb69224;border-radius:50%}.hero-orbit:after{inset:98px;border-style:dashed}.hero-word{position:absolute;right:26px;bottom:80px;font:500 clamp(100px,17vw,240px)/1 var(--serif);writing-mode:vertical-rl;letter-spacing:.1em;color:#ffdeb50b;pointer-events:none}.hero-stamp{position:absolute;right:clamp(40px,13vw,200px);top:180px;width:88px;height:88px;border:1px solid #d9aa7355;border-radius:50%;display:grid;place-items:center;font:22px/1.5 var(--serif);color:#d9aa73;transform:rotate(12deg)}
+
 .layout{max-width:1180px;display:grid;grid-template-columns:200px minmax(0,740px);gap:90px;padding:80px 32px 120px;margin:auto}.sidebar{position:sticky;top:40px;align-self:start;max-height:calc(100dvh - 80px);overflow:auto;scrollbar-width:thin;font-size:11px;color:var(--muted)}.sidebar summary{font:12px/1.5 var(--serif);color:var(--red);margin-bottom:20px;cursor:pointer;letter-spacing:.15em}.sidebar nav{display:flex;flex-direction:column;gap:8px}.sidebar a{text-decoration:none;line-height:1.8;padding:6px 0 6px 14px;border-left:1px solid var(--line);transition:color .3s,border-color .3s}.sidebar a:hover,.sidebar a[aria-current]{color:var(--red);border-color:var(--red)}.chapter-total{font:10px/1.5 system-ui;letter-spacing:.15em;margin:24px 0;color:#b49c8d}article{min-width:0}h2{position:relative;font:600 clamp(23px,2.5vw,30px)/1.65 var(--serif);color:var(--red);margin:95px 0 30px;padding-top:24px;border-top:1px solid var(--line);text-wrap:pretty}h2:first-child{margin-top:0}h2:before{content:attr(data-part);display:block;font:10px/1.5 Georgia,serif;letter-spacing:.25em;color:var(--gold);margin-bottom:12px}p{margin:0 0 24px;text-wrap:pretty}h2:first-child+p:first-letter{font:46px/.95 var(--serif);float:left;padding:9px 9px 0 0;color:var(--red)}blockquote{position:relative;margin:38px -20px;padding:34px 32px 30px;border:1px solid #d7bdac;border-left:3px solid var(--red);border-radius:2px 18px 18px 2px;background:linear-gradient(120deg,#f3e7d9,#fcf8f0)}blockquote:before{content:'';position:absolute;top:15px;left:32px;width:24px;height:2px;background:#bd9874}blockquote p{font:500 clamp(19px,2.5vw,25px)/1.85 var(--serif);color:var(--red);margin:0}code{font:13px/1.6 ui-monospace,Consolas,monospace;padding:2px 5px;background:#eee2d6;border-radius:3px;overflow-wrap:anywhere}strong{font-weight:650}ul{padding-left:24px}li{margin:12px 0}hr{border:0;border-top:1px solid var(--line);margin:50px 0}.reader-end{position:relative;margin-top:90px;padding:60px 0 10px;border-top:1px solid var(--line);text-align:center}.reader-end .end-mark{display:block;font:50px/1 var(--serif);color:var(--red);margin-bottom:25px}.reader-end p{font:18px/1.9 var(--serif);color:var(--muted)}.reader-end a{font-size:12px;text-decoration:none;color:var(--red)}.reader-veil{position:fixed;inset:0;background:#190d14;z-index:40;pointer-events:none;animation:reader-uncover 1.3s ease both}.top-copy{animation:reader-title 1.5s cubic-bezier(.16,1,.3,1) both}
+
 @keyframes reader-uncover{0%,15%{opacity:1}100%{opacity:0;visibility:hidden}}@keyframes reader-title{0%,20%{opacity:0;transform:translateY(22px)}100%{opacity:1;transform:translateY(0)}}
+
 @media(max-width:950px){.layout{grid-template-columns:160px minmax(0,1fr);gap:45px}.hero-stamp{right:45px;top:140px;opacity:.45}.hero-orbit{right:-200px}.top{min-height:620px}blockquote{margin-inline:0}}
+
 @media(max-width:700px){.reader-nav{padding:20px}.reader-nav>span{font-size:10px}.top{padding:145px 25px 80px;min-height:610px}.top h1{font-size:44px;line-height:1.4}.top .deck{max-width:290px;font-size:13px}.hero-stamp{top:110px;right:23px;width:60px;height:60px;font-size:17px;opacity:.3}.hero-word{bottom:30px;right:5px;font-size:150px}.hero-orbit{width:400px;height:400px;right:-240px;bottom:-60px}.layout{display:block;padding:28px 24px 80px}.sidebar{position:relative;top:auto;max-height:none;margin-bottom:48px;border-bottom:1px solid var(--line);padding:20px 0}.sidebar summary{margin:0}.sidebar nav{padding-top:20px}.sidebar details:not([open]) .chapter-total{display:none}.sidebar a{font-size:12px}.chapter-total{display:none}body{font-size:15px;line-height:2.05}h2{font-size:25px;margin-top:72px}blockquote{padding:28px 23px}.reader-end{margin-top:65px}}
+
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reader-veil{display:none}.top-copy{animation:none}.sidebar a{transition:none}}@media print{.sidebar,.reader-nav,.reader-veil,.reading-progress{display:none}.layout{display:block;padding:20px}.top{min-height:0;padding:30px;background:white;color:var(--ink)}.hero-orbit,.hero-word,.hero-stamp{display:none}.deck,.eyebrow,.signature{color:var(--muted)}.top h1{font-size:35px}body{font-size:11pt}h2{break-after:avoid}blockquote{break-inside:avoid}}
+
 .reader-nav{position:fixed;background:#46131fe8;backdrop-filter:blur(12px);padding-block:12px;z-index:25}.reader-home{text-decoration:none;color:#f1dcc5;font-size:12px;letter-spacing:0}
+
 :root{--serif:'PingFang SC','Microsoft YaHei',system-ui,sans-serif}.top h1{font-weight:550;letter-spacing:-.04em}h2{font-weight:600;font-size:clamp(23px,2.5vw,29px)}blockquote p{font-weight:500;font-size:clamp(18px,2.4vw,23px)}.signature{font:12px/1.8 system-ui;letter-spacing:.12em}.top-copy{animation:reader-title 2s cubic-bezier(.22,1,.36,1) both}.reader-veil{animation:reader-uncover 1.7s ease both}.reader-end .end-mark{appearance:none;border:0;background:none;padding:12px;color:var(--red);font:48px/1 system-ui;cursor:pointer;transition:transform .8s,opacity .8s}.reader-end .end-mark:hover,.reader-end .end-mark:focus-visible{transform:rotate(-18deg);opacity:.6}
+
 .reader-note{max-width:min(500px,calc(100vw - 36px));padding:38px;border:1px solid #d8c5b6;border-radius:3px 20px 20px 3px;background:#faf4e8;color:#4a2630;box-shadow:0 24px 100px #23101955}.reader-note::backdrop{background:#190d14a6;backdrop-filter:blur(3px)}.reader-note h2{font:500 14px/1.7 system-ui;margin:0 0 26px;padding:0;border:0;color:#8a7169}.reader-note h2:before{display:none}.reader-note blockquote{margin:0;padding:0;border:0;background:none}.reader-note blockquote:before{display:none}.reader-note blockquote p{font:600 32px/1.7 system-ui;letter-spacing:-.035em;margin:0 0 24px}.reader-note>p{font:13px/1.8 system-ui;color:#8a7169}.reader-note button{border:0;border-bottom:1px solid #b9997b;background:none;color:#6b1723;padding:8px 0;font:12px/1.5 system-ui;cursor:pointer}.reader-note[open]{animation:reader-note-in 1s ease both}
+
 @keyframes reader-note-in{from{opacity:0;transform:translateY(12px) rotate(-1deg)}to{opacity:1;transform:translateY(0) rotate(0)}}
+
 html{scroll-padding-top:90px}.reader-home,.journey-return{min-height:44px;display:inline-flex;align-items:center}.reader-note button{min-height:44px}
+
 @media(prefers-reduced-motion:reduce){.top-copy,.reader-veil,.reader-note[open]{animation:none}.reader-veil{display:none}.reader-end .end-mark{transition:none}}
 
+
+
+.standalone-versions{display:flex;justify-content:center;gap:8px 20px;flex-wrap:wrap;padding-top:24px;font:12px/1.7 system-ui,sans-serif;color:#79575b;font-variant-numeric:tabular-nums}.standalone-versions span{white-space:nowrap}@media(max-width:700px){.standalone-versions{font-size:11px;gap:8px 14px}}
 </style></head><body id="top"><div class="reading-progress" aria-hidden="true"></div><nav class="reader-nav" aria-label="阅读导航"><a class="reader-home" href="../#home">← 返回首页</a><a class="journey-return" href="../#about">返回关于 ↗</a></nav><header class="top"><div class="top-copy"><p class="eyebrow">A LITTLE CURIOSITY, A LONG WAY</p><h1><span>来时路</span></h1><p class="deck">从个人文件夹里的一批通知，到一份慢慢长成的校园生活指南。这里有选择，有误判，有返工，也有一点不肯放下的好奇。</p><p class="signature">记述 / Sol</p></div><i class="hero-orbit" aria-hidden="true"></i><span class="hero-word" aria-hidden="true">来时路</span><span class="hero-stamp" aria-hidden="true">起点</span></header><main class="layout"><aside class="sidebar"><details open><summary>沿途的十五站</summary><nav><a href="#story-1">一、最初要解决的，是新生不知道自己错过了什么</a><a href="#story-2">二、先拿自己的文件试一试</a><a href="#story-3">三、从“给学长看一眼”开始，网站有了真实访客</a><a href="#story-4">四、页面有了风格，但漂亮很快不再够用</a><a href="#story-5">五、资料扩大之后，真正困难的部分暴露出来</a><a href="#story-6">六、“往届对比”让项目第一次有了自己的判断方式</a><a href="#story-7">七、日历来回改了几轮，因为“时间”本来就不止一种意思</a><a href="#story-8">八、为什么后来还是需要后台和数据库</a><a href="#story-9">九、我们付出过的另一种成本：额度、等待和版本混乱</a><a href="#story-10">十、校园指南把最初暂缓的问题重新带了回来</a><a href="#story-11">十一、服务器和域名的讨论，让低成本原则重新落地</a><a href="#story-12">十二、最后几轮验收，才把“完成”重新定义清楚</a><a href="#story-13">十三、名字终于跟上了产品</a><a href="#story-14">十四、我们接下来准备做什么</a><a href="#story-15">十五、作为这段协作里的Sol，我应当记住什么</a></nav><p class="chapter-total">15 CHAPTERS / ONE BEGINNING</p></details></aside><article><h2 id="story-1" data-part="CHAPTER 01">一、最初要解决的，是新生不知道自己错过了什么</h2>
+
 <p>项目最早的名字很长：《校园四年机会信息聚合项目》。它背后的问题却很具体：刚进入大学的人，通常不知道学校一年里会出现哪些比赛、活动、招募、实践和发展项目，更不知道哪些事需要提前准备。</p>
+
 <p>信息已经在那里，只是散在官网、学院页面、公众号、群消息和附件里。你当时希望，把往年的通知整理出来，让新生在下一次报名开始之前，先知道自己可以做什么。</p>
+
 <p>最初那份V3.0说明里，有两个要求一直值得保留：一是把构想变成真正有用的产品，二是让一个没有软件开发经验的大学生，主要依靠AI，长期、低成本地维护它。</p>
+
 <p>这两个要求，从来都没有因为后来出现了数据库和管理后台而失效。</p>
+
 <p>你说明自己是文科背景，没有系统学过GitHub、数据库、服务器和自动化。你可以判断什么信息有用、什么页面看着不舒服，也愿意提供资料和检查结果，但不希望项目成立的前提是“以后你就会编程了”，或者“等以后有一个团队来维护”。你还要上课、学习专业技能、摄影、参加校园活动，不可能每天坐在电脑前手抄通知。</p>
+
 <p>那时，生活类信息其实已经出现在原始构想里：吃住行、便民信息、校园经验。只是为了控制工作量，它们一度退到了后面。后来你重新想起校园网、校园跑、图书馆和电话查询，并不是突然跑出了一个毫不相干的新需求，而是把最初暂时放下的一部分找了回来。</p>
+
 <h2 id="story-2" data-part="CHAPTER 02">二、先拿自己的文件试一试</h2>
+
 <p>你没有等待一份完美的数据集。</p>
+
 <blockquote><p>“就在你能访问的这个文件夹内，……你可以先用他试一试，做一些相对的开发。”</p></blockquote>
+
 <p>你手里的资料来自自己的大学生活。你才大一，经历有限，也还没有专门面向外界收集信息；正因为这样，这一批文件很适合作为试点：它们有真实的使用背景，而不是为了填满网页随手搜来的材料。</p>
+
 <p>最初，你为Luna写了很详细的资料整理指令：只能读实际可访问的资料，不能猜；活动时间、发布时间、报名时间分开；重复和冲突单列；保留原件；不要擅自发布私人信息。你后来才发现，我可以直接调用子智能体，不需要你自己开两个项目来回搬话。</p>
+
 <p>你给的授权很明确：</p>
+
 <blockquote><p>“那请你先做一个demo之类的吧，我看看效果。”</p></blockquote>
+
 <p>早期原型让你看到，这个想法确实能变成一个页面。你对呈现方式是满意的，也马上指出它不应该叫“大学机会地图”。那时你说标题可以以后再起，更重要的是页面已经有一点你想要的意思。</p>
+
 <p>随后你发现，文件夹里十几个文档，页面却只看见少量条目，于是要求把资料补齐。这是第一个后来反复出现的问题：文件有多少、提取了多少、变成多少活动、页面实际显示多少，并不是同一个数字。当时如果没有把这几个口径讲清，就很容易让你觉得工作被漏掉了。</p>
+
 <p>最初几轮产物的记录提到15份Word、小批活动和参考材料。它们能说明试点规模，但不能直接与今天的459张公开卡片相减相加。数据模型在这期间已经改变了很多次。</p>
+
 <h2 id="story-3" data-part="CHAPTER 03">三、从“给学长看一眼”开始，网站有了真实访客</h2>
+
 <p>第一次想把东西发给别人看，项目的要求就变了。</p>
+
 <p>你问能不能创建一个GitHub仓库，名字先叫<code>cdu-activity-calendar</code>；以后功能扩展了还能不能改名。你还提起朋友用过的<code>xxx.github.io</code>，想知道它是不是依托GitHub的个人门户。</p>
+
 <p>你当时并不熟悉GitHub，连仓库和Pages的设置也需要一步步指引。连接插件与浏览器登录并不是同一件事，浏览器控制也出现过超时。最后你亲手创建了仓库、设置了<code>main / root</code>发布来源，并发截图确认有没有选对。</p>
+
 <p>这个过程并不“高级”，但它很重要：项目第一次有了可以直接转发的公开链接。</p>
+
 <p>你那句话很能代表当时的状态：</p>
+
 <blockquote><p>“我是不是一次要求的有点多了，考验一下你的长程任务执行能力。”</p></blockquote>
+
 <p>此后，你把页面发给学长，得到的反馈里有“很AI”，也有更实际的质疑：信息准不准？看过这里以后，是否还要自己再查一遍？</p>
+
 <p>原文链接已经放上去，并不能自动回答这些问题。一个信息汇总网站的价值，至少包括替用户省掉一部分翻找和理解的工作。如果每条内容都只是把标题换个地方放，再让人“详见原文”，用户当然会问：那我为什么不直接去官网？</p>
+
 <p>这次外部反馈，把“页面做出来了”推进到了“它到底帮了什么忙”。</p>
+
 <h2 id="story-4" data-part="CHAPTER 04">四、页面有了风格，但漂亮很快不再够用</h2>
+
 <p>你对页面的要求一直很具体。</p>
+
 <p>你要分类、时间表、标签检索；要看学院、年份、活动类别、是否还能参加；要区分校级、市级等范围；不喜欢小字太多、大段解释太密。你问过Impeccable，后来又给了frontend-design、Taste、Emil动效等设计工具的线索，希望我认真研究和挑着用。</p>
+
 <p>页面逐渐从一个列表变成多个一级入口。首页承担展示和吸引兴趣，活动探索承担检索，后来增加日历、校园指南和关于。票签、轨道、跑马灯、换一批、滚动入场、字体层次，都在这期间形成。</p>
+
 <p>颜色也经历过试验。早期绿色曾是主基底，你随后要求参考成都大学的红色方向试一版，并认可了效果。红色、米白和暖杏色成为主视觉；后来活动类型与指南卡片可以使用低饱和的辅助色，以增加区分。</p>
+
 <p>这一步也出现过返工。旧绿与新红叠在一起，一些悬停色、控件高亮还残留旧样式；不同页面的中英文标题大小、空白和装饰不统一。你一再提醒：不要只把字放大，要整体一致，还要有排版和装饰。</p>
+
 <p>你特别在意那句话：</p>
+
 <blockquote><p>“在大学里，多发现一种可能。”</p></blockquote>
+
 <p>它后来成了首页最稳定的一部分。与它相比，项目的临时名称、某次分类排列、某一组文案，都没有那么重要。</p>
+
 <p>我从这一阶段学到的一个很实际的要求是：你要的是一套有个性、又能正常使用的页面。动效要优雅，不能打断输入；加载动画要对应真实等待，不能为了表演故意拖延；字体可以多样，但同级标题不能各唱各的；手机上一个浮动按钮如果遮住了正文，桌面再漂亮也不能抵消这个问题。</p>
+
 <h2 id="story-5" data-part="CHAPTER 05">五、资料扩大之后，真正困难的部分暴露出来</h2>
+
 <p>你要求我去成都大学官网找资料，再找往年同类活动做对比。范围后来从近一年扩到近五年，归档材料达到四千多条。WorkBuddy、GPT、DeepSeek、Qoder和Luna先后参与，产生了不少zip包、JSON、附件转写和交接目录。</p>
+
 <p>数据越多，问题也越明显。</p>
+
 <p>你先问为什么只上了这么一点，后来又发现，公开页面里出现了太多自己并不想看的东西：零散讲座、宣传新闻、没有参与意义的内容；同名赛事重复，分类不对，标题像公文，摘要长而空。</p>
+
 <blockquote><p>“好乱啊，什么杂七杂八的讲座之类都往上放，我觉得很无聊。”</p></blockquote>
+
 <p>这句话实际上改变了收录标准。项目的目标从来不是“学校发过什么都收进来”，而是“学生值得了解、可以参与或需要办理什么”。历史材料可以完整保留，公开列表却需要选择。</p>
+
 <p>接着出现的是更严重的提取问题。你点开原文就能找到时间、地点、条件，页面却写“待核实”“详见原文”或“未提取到日期”。有些事实放错栏目：讲者的毕业经历进入日程，研究方向变成报名步骤，作品创作起点变成比赛开始。</p>
+
 <p>你把截图拿出来质问：为什么附件报名表会变成首页精选？为什么从首页点进去，反而搜不到？为什么有重复、乱码和一大段絮叨？</p>
+
 <p>这些都不是简单加一个数据库就能解决的问题。它们需要从资料读取、字段含义、实体归属、公开投影到页面渲染，把整条链路接起来。</p>
+
 <p>我也必须把这部分责任写清。AI能很快交出一个包、一个页面、一份“通过”报告，但这些都不能替代你真正点开后的结果。我们确实出现过：文件下载了，附件没读；字段进了某个JSON，详情没用它；脚本改了，站点没重建；所谓完成，只是某个处理阶段结束。</p>
+
 <p>这些问题让你花了本应被工具节省的时间。</p>
+
 <h2 id="story-6" data-part="CHAPTER 06">六、“往届对比”让项目第一次有了自己的判断方式</h2>
+
 <p>你对往届对比的期待，并不满足于给同一个活动放几个年份链接。</p>
+
 <p>你希望一眼看见每年有什么变化、有什么共性，有点像购物网站比较不同款式，又不想冗长。这是一个很重要的产品要求：资料量必须变成可比较的信息，而不是更多的阅读负担。</p>
+
 <p>为了做到这一点，我们需要把长期活动系列与具体公告拆开。金橙子、游泳、各类选聘等，同名不应随便重复建条目；但学院独立项目和校级项目，也不能仅因为标题相似就强行合并。</p>
+
 <p>“同一活动、不同年份、同年不同通知”成了三层需要明确处理的关系。之后又暴露过选择器问题：下拉切了通知，正文、日期和原文链接却没有一起切；全局年份筛选还会覆盖卡片内部的年份选择。</p>
+
 <p>这些细节之所以要修，是因为往届对比的价值恰好建立在它们之上。年份和来源对应错了，再漂亮的对比表也只是把错误排得更整齐。</p>
+
 <p>最终，我们把对比收紧成两个年份并排、重点字段先看、其余按需展开，并保留差异查看和对应原文。默认同年采用最新公告，旧通知仍保留在库。你要的“看看去年再准备今年”，才开始从一句文案变成一种实际操作。</p>
+
 <h2 id="story-7" data-part="CHAPTER 07">七、日历来回改了几轮，因为“时间”本来就不止一种意思</h2>
+
 <p>日历的迭代很能说明这个项目的开发方式。</p>
+
 <p>第一版出来后，你连续指出：拥挤、复杂、一眼不知道干什么。随后你说明初心：</p>
+
 <blockquote><p>“其实初心是看看每年十月干啥，而不是这个月干啥。”</p></blockquote>
+
 <p>于是，月份发现变得更重要。它回答的是：往年这个月份通常出现什么，现在可以提前关注什么。具体日期日历仍保留，但不再让整月内容一次铺开。</p>
+
 <p>后来你又发现，活动探索已经有月份筛选，日历默认应该更像真正的每天日程。这并不意味着前一个要求被证明错误，而是我们逐渐看清两种不同任务：一个是找季节规律，一个是看具体日期。</p>
+
 <p>跨月活动也反复制造麻烦。征集从九月持续到十一月，若每个月都重复列出，月份发现会显得拥挤；若一个全年项目每天都铺在格子里，具体日历几乎失去意义。</p>
+
 <p>最后的处理是把两者分开：月份发现归开始月份，具体日历画明确节点，主要是报名/提交截止与活动开始、结束。作品原创起点、年龄限制、学院内部报送时间，也不能混成同一种“活动时间”。</p>
+
 <p>到了最后一轮，时间问题还进一步细化为证据状态：confirmed、unverified、conflict。一个日期即使字段里有值，也不一定足以告诉用户“现在可以报名”。</p>
+
 <p>这些并不是为了让系统看起来更正规而添加的术语。它们各自对应过你在页面里真正遇到的一种误导。</p>
+
 <h2 id="story-8" data-part="CHAPTER 08">八、为什么后来还是需要后台和数据库</h2>
+
 <p>你和学长的讨论，把另一个问题推到了前面：长远看，网站该怎么维护？</p>
+
 <p>学长提到前端、后端、数据库、代理、安全。你当时也说出了一个重要判断：数据库本身解决不了内容杂乱，很多问题属于筛选、层级和使用体验。</p>
+
 <p>这两个判断并不冲突。数据库能够让活动、通知、来源和事实有稳定的身份，让修改有记录，让多个页面共享同一套数据；但它不会自动判断哪个讲座无聊、哪句官话没用、哪个截止对学生有意义。</p>
+
 <p>我们先尝试本地资料库和控制台，后来参考摄影社项目的后端经验，落地Django、SQLite、公开API和管理工作台。</p>
+
 <p>你对早期控制台并不客气：粗糙、不好用、卡、看不懂在干什么；想改的字段改不了，能编辑的条目太少。你也反复提醒自己是小白，不希望读手册才能完成工作。</p>
+
 <p>这些反馈推动后台补上更实际的能力：手动新增、活动与通知版本、时间地点、对象、报名和材料、草稿、来源、分类、账号权限、修订和恢复。旧后台不应继续作为新后台功能不全的借口。</p>
+
 <p>但后台另一个边界也必须讲清：在本地改好，不等于公开网站立刻改变。正式数据库、预览、静态导出、GitHub部署是不同步骤。你不应被迫理解所有技术细节，界面却必须告诉你当前在哪一步。</p>
+
 <p>这也是下一轮“图形化预览与发布准备”要解决的问题。</p>
+
 <h2 id="story-9" data-part="CHAPTER 09">九、我们付出过的另一种成本：额度、等待和版本混乱</h2>
+
 <p>项目的成本并不只有服务器账单。</p>
+
 <p>你多次担心Codex额度耗尽，要求把杂活交给Luna，把大批资料交给便宜或免费的WorkBuddy、DeepSeek、Qwen和Qoder。你让我们保存断点，做好随时中断的准备，也希望睡醒能看到成果。</p>
+
 <p>有时你愿意让任务慢慢跑，强调全面；有时你看到长时间消耗，又直接问我们到底完成了什么、正在做什么、还有什么没做。</p>
+
 <blockquote><p>“我真求你了，一直在烧token。”</p></blockquote>
+
 <p>这句话应该被放进开发记录，而不是只保留那些“你很满意”的时刻。它提醒我，长程执行的价值不能用忙碌感证明。模型可以一直读文件、写报告、互相验收，却不一定持续增加你的收益。</p>
+
 <p>多模型协作还引入了新的成本。你做过很长一段时间的人工中转：把一方的报告搬给另一方，把提示词发出去，再把zip包交回来。不同执行者有不同目录、不同快照、不同“最新版”；一个在改脚本，一个在看旧HTML，另一个用公开投影覆盖正式库，就会把工作重新搅乱。</p>
+
 <p>你也曾发现，自己认真写的GitHub README被改得面目全非。这是一个很明确的边界教训：用户授权我们开发项目，并不意味着用户的文字和原件可以被随意改写。</p>
+
 <p>因此，后来我们越来越强调：唯一正式库、明确源码、独立预览、稳定ID、增量提案、备份、manifest和发布记录。它们的目的，是减少你当“版本调解员”的时间。</p>
+
 <h2 id="story-10" data-part="CHAPTER 10">十、校园指南把最初暂缓的问题重新带了回来</h2>
+
 <p>当活动信息越来越多，你提出了另一个很尖锐的观察：</p>
+
 <blockquote><p>“现在整个网站越来越空了，看着数据量越来越丰富，实际上没有人会去翻这些东西。”</p></blockquote>
+
 <p>这里的“空”，不是文件少，也不是页面没填满，而是学生日常为什么要回来打开它，理由还不够充分。</p>
+
 <p>你重新想起校园跑APP操作、运营商宽带、易班、学习通。随后又列出电话、组织架构、食堂、商店、药店、饮水机、校园网、图书馆规则等。</p>
+
 <p>我们开始读学生手册、新生资料和图书馆读者手册，把规则拆成办事步骤。用户后来确认，2025版学生手册就是本届新生收到的资料，能够作为当前的来源，但其中具体制度的年份与适用范围仍需保留。</p>
+
 <p>这一步也有新的设计要求：电话不值得占一个巨大的卡片；名字和号码清楚即可。校园查询应成为指南的子栏目。指南要让人能照着做，而不是把“你可以到官方平台咨询”写成一篇教程。</p>
+
 <p>与此同时，我们没有可靠来源的东西仍然不能补：食堂每个窗口价格、每层饮水机位置、所有店铺营业状态，都需要真实资料或实地采集。网站可以有扩展的方向，但不能用想象把它装满。</p>
+
 <p>到这里，项目已经明显超出了“活动日历”的范围。</p>
+
 <h2 id="story-11" data-part="CHAPTER 11">十一、服务器和域名的讨论，让低成本原则重新落地</h2>
+
 <p>你担心国内用户不挂梯子打不开，也明显感觉到GitHub Pages访问变慢。你问过自定义域名、ICP备案、免费托管，也实际尝试过Render和EdgeOne上传。</p>
+
 <p>这里暴露过一些容易被忽略的细节：免费服务是否休眠，文件是否持久保存，静态托管不能直接运行Django，上传包是不是把整个项目和依赖都装进去了。EdgeOne曾提示资源超过1000个，后来重新整理上传产物。</p>
+
 <p>你最终说，服务器太贵，先冷静一下，还是把产品打磨好。</p>
+
 <p>这个选择很合理。当前的架构因此形成一个务实的组合：本地Django管理和SQLite保存内容，再导出静态站点到GitHub Pages。访客只取公开页面与JSON，本地后台、数据库、账号凭据不会直接暴露给公网。</p>
+
 <p>它有局限，例如本地编辑后需要再构建发布；但它也符合最初的要求：不以持续购买服务器、雇维护团队为前提。</p>
+
 <h2 id="story-12" data-part="CHAPTER 12">十二、最后几轮验收，才把“完成”重新定义清楚</h2>
+
 <p>最后几轮内容审计，是这一段开发最值得记住的收尾。</p>
+
 <p>Qoder第一轮补全新增了3592条事实。独立核对也确认，不少通知的地点、报名方式、材料和奖励覆盖明显提高。</p>
+
 <p>但Luna抽查找到一个反例：跆拳道比赛的附件文字里明确写了资格、体育馆副馆、报名截止和材料，审计却把多项标为“原文未说明”，详情仍显示附件未读。</p>
+
 <p>与此同时，静态接口与动态版有68个筛选用例不一致。后来定位到，静态筛选候选只考虑公开投影后的通知，没有把某些未投影的同年旧通知算进去。16张卡因此漏掉，分页位移又让52张卡看起来像凭空多出。</p>
+
 <p>修完后，1657项对照全部通过；跆拳道2022版从3条事实增至13条，能看到资格、地点、截止、报名、材料、保证金和奖励。</p>
+
 <p>然后又有一个反例：川渝青年说的一条学院汇总节点，被卡片标成学生“报名截止”，还出现在“当前报名”。这个日期当时甚至仍在缺证据清单里。</p>
+
 <p>这次问题说明，动态与静态结果一致，仍可能是两边一起说错了话。</p>
+
 <p>最后一轮把截止类型和证据状态接到服务、静态适配器、卡片、详情与日历：学院节点不再进入学生当前报名；有证据的报名/提交仍保留；未知和冲突日期留在历史中，但不作为确定节点。</p>
+
 <p>大部分缺少依据的日期，终于找到了原文。其余的问题如实留下，没有为了让数字好看就强行清零。</p>
+
 <p>后来，你说：</p>
+
 <blockquote><p>“发布！”</p></blockquote>
+
 <p>终于，那一版发布了。准备好的页面和线上文件一一对上，你亲手写的README也原样留下。</p>
+
 <p>这一版公开的是459张卡、623份所选通知、7篇指南和38条校园服务。与最初相比，它已经有了正式内容库、图形工作台、版本记录、公开投影、分片加载和更完整的语义规则。</p>
+
 <p>它仍有缺口，但我们终于能够更清楚地说明：哪里完成了，哪里还没有，用户实际会看到什么。</p>
+
 <h2 id="story-13" data-part="CHAPTER 13">十三、名字终于跟上了产品</h2>
+
 <p>你在这一版发布后决定，项目改名为“成大早知道”，英文对应<code>cdu-headsup</code>。</p>
+
 <p>这个名字的变化有内容上的依据。活动发现、往届准备、日期查询、校园指南、电话服务，已经共同构成一个更宽的入口。“早知道”可以指早一点知道报名，也可以指早一点知道办事步骤，少踩一个新生常见的坑。</p>
+
 <p>我随后按当前实现画了架构图，并把公众号采集标为下一步规划。图里没有把本地后端伪装成云服务，也没有把离线AI画成访客每次打开页面都在调用的在线代理。</p>
+
 <p>公众号是接下来值得做的入口。学校、团委、学工的许多信息确实不只在官网。我们已经研究订阅工具和链接导入方案，也发现当前网站的原文链接只允许学校域名：如果只顾把微信文章抓下来，来源按钮仍可能不出现。这一次，接入应该从采集一路考虑到来源核验、去重、证据、详情和发布。</p>
+
 <p>后来，网站和仓库也正式换上了“成大早知道”的名字。从一个活动日历，到一份校园生活指南，它终于有了更合身的名字。</p>
+
 <h2 id="story-14" data-part="CHAPTER 14">十四、我们接下来准备做什么</h2>
+
 <p>你发现Qoder还有5000credits即将到期，决定拿来做更多实际建设。具体模型是什么，目前并没有确认，我们也不需要把“全球顶级模型”作为计划成立的前提。</p>
+
 <p>下一阶段的任务已经拆成几条线：把指南做得能照着办，做三个公众号的小规模增量接入，定向处理剩余证据问题，统一新品牌，完善图形化预览与发布准备，实测手机使用和首次加载。</p>
+
 <p>为了不重演版本混乱，并行工作者会在各自目录交资料提案与补丁，只有一个集成人改正式库和公共核心源码。Qoder完成后仍交我组织验收与发布；开发回顾本身由我继续维护，不再转手让执行者根据旧报告编一遍。</p>
+
 <p>这份计划没有要求一口气做成无所不包的校园平台。每一条都有一个具体问题：学生能不能找到东西、看懂要求、照着办事；你能不能少花一点维护时间；以后再换模型接手时，成果能不能保留下来。</p>
+
 <h2 id="story-15" data-part="CHAPTER 15">十五、作为这段协作里的Sol，我应当记住什么</h2>
+
 <p>你在这段开发中做的，不只是“给AI一个想法”。你反复发现了我们自己验收时没有发现的问题：空信息、错时间、重复实体、找不到原文、假报名状态、卡顿、遮挡、字号不一致、旧版本没有上线。</p>
+
 <p>我不能把这些反馈只理解为对细节的挑剔。它们其实一直在要求同一件事：让系统替人省事。</p>
+
 <p>我也不该把持续调用工具和写越来越多的文档，当成长程执行能力的证明。你问我做完了什么、为什么还在消耗额度，是合理的问题。今后的任务需要更清楚的交付、边界、断点和停止条件。</p>
+
 <p>这段来时路里，有足以保留的创意，也有应该承认的返工。漂亮首页并没有自动带来好数据，数据库并没有自动带来好内容，测试全绿也没有自动带来正确的含义。它们需要分别做好，再接在一起。</p>
+
 <p>“成大早知道”接下来是否会成为更多学生愿意打开的网站，仍要靠真实使用来回答。至少到今天，我们已经能更认真地面对这个问题，而不只是继续增加文件、功能和模型调用的数量。</p>
+
 <hr>
-<footer class="reader-end"><button class="end-mark" id="journey-note-trigger" type="button" aria-label="翻开最后的一张便笺">。</button><p>一点好奇，慢慢长成一份校园生活指南。</p><a href="../#home">返回首页 ↗</a> <span aria-hidden="true"> · </span> <a href="#top">再回到开头 ↑</a></footer></article></main><div class="reader-veil" aria-hidden="true"></div><script>(() => {
+
+<footer class="reader-end"><button class="end-mark" id="journey-note-trigger" type="button" aria-label="翻开最后的一张便笺">。</button><p>一点好奇，慢慢长成一份校园生活指南。</p><a href="../#home">返回首页 ↗</a> <span aria-hidden="true"> · </span> <a href="#top">再回到开头 ↑</a><div class="standalone-versions"><span data-database-date>数据库版本：2026.10.22</span><span>网站版本：v8.0.1</span></div></footer></article></main><div class="reader-veil" aria-hidden="true"></div><script>(() => {
+
  const exit=document.querySelector('.journey-return'),target=new URL('../',location.href);target.hash='about';exit.href=target.href;
+
  exit.addEventListener('click',event=>{let ref;try{ref=new URL(document.referrer)}catch(_){}if(ref&&ref.origin===target.origin&&ref.pathname===target.pathname){event.preventDefault();history.back()}});
+
  addEventListener('keydown',event=>{if(event.key==='Escape'&&!document.querySelector('dialog[open]')){event.preventDefault();exit.click()}});
+
  const progress=document.querySelector('.reading-progress');let pending=false;
+
  function update(){const total=document.documentElement.scrollHeight-innerHeight;progress.style.transform='scaleX('+Math.max(0,Math.min(1,total>0?scrollY/total:0))+')';pending=false}
+
  addEventListener('scroll',()=>{if(!pending){pending=true;requestAnimationFrame(update)}},{passive:true});addEventListener('resize',update);update();
+
  const details=document.querySelector('.sidebar details');if(matchMedia('(max-width:700px)').matches)details.open=false;
+
  const links=[...document.querySelectorAll('.sidebar nav a')];
+
  if('IntersectionObserver'in window){const seen=new Map();const observer=new IntersectionObserver(entries=>{entries.forEach(entry=>seen.set(entry.target.id,entry.isIntersecting));const active=links.find(a=>seen.get(a.hash.slice(1)));if(active){links.forEach(a=>a.removeAttribute('aria-current'));active.setAttribute('aria-current','location')}},{rootMargin:'-10% 0px -55% 0px'});document.querySelectorAll('article h2').forEach(h=>observer.observe(h))}
+
  const title=document.querySelector('.top h1');title.tabIndex=-1;title.focus({preventScroll:true});
+
 })();
+
 </script><dialog class="reader-note" aria-labelledby="reader-note-title"><h2 id="reader-note-title">最初，你只是说。</h2><blockquote><p>“你先试试。”</p></blockquote><p>于是，就有了后来。</p><button type="button">把便笺放回去</button></dialog><script>(()=>{const trigger=document.getElementById('journey-note-trigger'),note=document.querySelector('.reader-note');trigger.addEventListener('click',()=>note.showModal());note.querySelector('button').addEventListener('click',()=>{note.close();trigger.focus({preventScroll:true})});})();</script></body></html>

@@ -22,6 +22,7 @@ SCRIPTS = ['core.js', 'calendar-core.js', 'page.js', 'catalog-ui.js', 'calendar-
 if not INCLUDE_JOURNEY: SCRIPTS = [name for name in SCRIPTS if name not in {'journey-scene.js','journey.js','souvenir.js'}]
 EXTRA_ASSETS = {'favicon-white.png': SRC / 'brand' / 'favicon-white.png'}
 EXTRA_ASSETS['updates.html'] = SRC / 'content' / 'updates.html'
+VERSION_PATH = SRC / 'site-version.json'
 if INCLUDE_JOURNEY:
     EXTRA_ASSETS['journey.html'] = SRC / 'content' / 'journey.html'
     EXTRA_ASSETS['souvenir-art.png'] = SRC / 'brand' / 'souvenir-art.png'
@@ -96,6 +97,18 @@ BOOT_SCRIPT = """
 """
 
 
+def render_site_metadata(text, database_date='—'):
+    import re
+    version = json.loads(VERSION_PATH.read_text(encoding='utf-8'))['version']
+    if not re.fullmatch(r'\d+\.\d+\.\d+', version): raise ValueError('Invalid website version')
+    needs_date = '__CDU_DATABASE_DATE__' in text
+    text = text.replace('__CDU_SITE_VERSION__', version).replace('__CDU_DATABASE_DATE__', database_date)
+    if needs_date and database_date == '—' and 'data-database-date' in text:
+        script = "<script>(()=>{fetch('../api/v1/meta/').then(r=>{if(!r.ok)throw Error();return r.json()}).then(m=>{const d=new Date(m.published_at);if(!Number.isFinite(d.getTime()))return;const t=new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(d).replaceAll('/','.');document.querySelectorAll('[data-database-date]').forEach(n=>n.textContent='数据库版本：'+t)}).catch(()=>{})})();</script>"
+        text = text.replace('</body>', script + '</body>')
+    return text
+
+
 def compose_styles():
     css = (SRC / 'styles' / 'app.css').read_text(encoding='utf-8') + '\n' + (SRC / 'styles' / 'activity-views.css').read_text(encoding='utf-8')
     if INCLUDE_JOURNEY: css += '\n' + (SRC / 'styles' / 'journey.css').read_text(encoding='utf-8')
@@ -117,9 +130,12 @@ def build():
         shutil.copyfile(SRC / 'scripts' / name, ASSETS / name)
 
     for name, source in EXTRA_ASSETS.items():
-        shutil.copyfile(source, ASSETS / name)
+        if source.suffix == '.html': (ASSETS / name).write_text(render_site_metadata(source.read_text(encoding='utf-8')), encoding='utf-8', newline='\n')
+        else: shutil.copyfile(source, ASSETS / name)
 
+    version_seed = VERSION_PATH.read_bytes()
     digest = hashlib.sha256((template+css+BOOT_SCRIPT+BOOT_STYLE).encode())
+    digest.update(version_seed)
     for name in ['api.js',*SCRIPTS]:digest.update((SRC/'scripts'/name).read_bytes())
     for source in EXTRA_ASSETS.values():digest.update(source.read_bytes())
     version = digest.hexdigest()[:16]
@@ -132,6 +148,7 @@ def build():
     page = page.replace('</body>', boot + '</body>')
     if 'id="catalog-data"' in page or 'id="campus-life-data"' in page:
         raise SystemExit('模板里仍然内嵌数据块，已停止构建')
+    page = render_site_metadata(page)
     (DIST / 'index.html').write_text(page, encoding='utf-8', newline='\n')
 
     info = {

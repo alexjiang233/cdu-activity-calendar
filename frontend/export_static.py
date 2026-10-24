@@ -393,6 +393,8 @@ def assemble_site(exported_at: str, snapshot_info: dict) -> dict:
     import build as frontend_build
 
     template = (SRC / 'index.template.html').read_text(encoding='utf-8')
+    published = json.loads((DATA / 'meta.json').read_text(encoding='utf-8')).get('published_at')
+    database_date = datetime.fromisoformat(published.replace('Z','+00:00')).astimezone(ZoneInfo('Asia/Shanghai')).strftime('%Y.%m.%d') if published else '—'
     css = frontend_build.compose_styles()
     for name in frontend_build.SCRIPTS:
         if not (SRC / 'scripts' / name).exists():
@@ -404,6 +406,7 @@ def assemble_site(exported_at: str, snapshot_info: dict) -> dict:
     data_files = sorted(path for path in DATA.rglob('*.json'))
     asset_sources = [
         SRC / 'index.template.html',
+        frontend_build.VERSION_PATH,
         SRC / 'styles' / 'app.css',
         SRC / 'styles' / 'activity-views.css',
         *([SRC / 'styles' / 'fold.css'] if (SRC / 'styles' / 'fold.css').exists() else []),
@@ -427,7 +430,8 @@ def assemble_site(exported_at: str, snapshot_info: dict) -> dict:
     for name in frontend_build.SCRIPTS:
         shutil.copyfile(SRC / 'scripts' / name, assets / name)
     for name, source in frontend_build.EXTRA_ASSETS.items():
-        shutil.copyfile(source, assets / name)
+        if source.suffix == '.html': (assets / name).write_text(frontend_build.render_site_metadata(source.read_text(encoding='utf-8'), database_date), encoding='utf-8', newline='\n')
+        else: shutil.copyfile(source, assets / name)
     adapter = adapter_template.replace('__CDU_BUILD_REVISION__', build_id)
     (assets / 'api.js').write_text(adapter, encoding='utf-8', newline='\n')
 
@@ -451,6 +455,7 @@ def assemble_site(exported_at: str, snapshot_info: dict) -> dict:
     page = page.replace('</body>', boot + '</body>')
     if 'id="catalog-data"' in page or 'id="campus-life-data"' in page:
         raise SystemExit('模板里仍然内嵌数据块，已停止构建')
+    page = frontend_build.render_site_metadata(page, database_date)
     (SITE / 'index.html').write_text(page, encoding='utf-8', newline='\n')
 
     write_json(SITE / 'data' / 'build.json', {
