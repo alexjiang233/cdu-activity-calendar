@@ -939,6 +939,14 @@ html[data-input-method=keyboard] .global-nav a[aria-current=page]::after{transfo
  .calendar-date-tools .calendar-year-label select{width:auto;min-width:0;max-width:100%}
 }
 
+/* About: release notes entry. */
+.about-updates-link{display:flex;align-items:center;gap:22px;text-decoration:none;color:#6b1723;background:#f2e5dc;border:1px solid #ddc2b6;border-radius:18px;padding:25px 28px;margin:26px 0 36px;transition:background .3s,border-color .3s,transform .3s}
+.about-updates-link:hover{background:#ecdacf;border-color:#a66e61;transform:translateY(-3px)}
+.updates-link-mark{display:flex;gap:4px;width:42px;height:40px;align-items:center;flex:none;transform:rotate(-7deg);transition:transform .4s}.updates-link-mark i{display:block;width:11px;height:32px;border:1px solid currentColor;border-radius:2px}.updates-link-mark i:nth-child(2){height:38px;background:#6b172315}.updates-link-mark i:last-child{height:27px}.about-updates-link:hover .updates-link-mark{transform:rotate(0)}
+.updates-link-copy{display:flex;flex-direction:column;gap:3px}.updates-link-copy small{font-size:10px;letter-spacing:.12em;color:#8c6c62}.updates-link-copy strong{font-size:23px;font-weight:650}.updates-link-copy>span{font-size:13px;color:#856769}.updates-link-meta{margin-left:auto;font-size:11px;color:#8b6f67;white-space:nowrap;display:flex;gap:24px;align-items:center}.updates-link-meta b{font-size:25px;font-weight:400;transition:transform .3s}.about-updates-link:hover .updates-link-meta b{transform:translate(3px,-3px)}
+@media(max-width:700px){.about-updates-link{gap:14px;padding:20px 17px;margin:20px 0 28px;border-radius:14px}.updates-link-copy strong{font-size:21px}.updates-link-copy>span{font-size:12px}.updates-link-meta{gap:9px}.updates-link-meta b{font-size:22px}.updates-link-mark{width:32px;gap:3px}.updates-link-mark i{width:9px}.updates-link-copy small{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.about-updates-link,.about-updates-link *{transition:none!important;transform:none!important}}
+
 #about .journey-trigger{appearance:none;position:relative;display:inline;border:0;border-radius:0;background:none;padding:0;margin:0;box-shadow:none;color:inherit;font:inherit;line-height:inherit;letter-spacing:inherit;text-align:inherit;text-decoration:none;vertical-align:baseline;cursor:default;max-width:100%}
 #about .journey-period::before{content:'';position:absolute;left:50%;top:50%;min-width:44px;min-height:44px;width:1em;height:1em;transform:translate(-50%,-50%)}
 #about .journey-subtitle{white-space:normal}#about .journey-trigger:focus-visible{outline:2px solid #b18b6b;outline-offset:5px;border-radius:3px}

@@ -21,6 +21,7 @@ INCLUDE_JOURNEY = os.environ.get('CDU_INCLUDE_JOURNEY') == '1'
 SCRIPTS = ['core.js', 'calendar-core.js', 'page.js', 'catalog-ui.js', 'calendar-ui.js', 'life.js', 'explore.js', 'journey-scene.js', 'journey.js', 'souvenir.js']
 if not INCLUDE_JOURNEY: SCRIPTS = [name for name in SCRIPTS if name not in {'journey-scene.js','journey.js','souvenir.js'}]
 EXTRA_ASSETS = {'favicon-white.png': SRC / 'brand' / 'favicon-white.png'}
+EXTRA_ASSETS['updates.html'] = SRC / 'content' / 'updates.html'
 if INCLUDE_JOURNEY:
     EXTRA_ASSETS['journey.html'] = SRC / 'content' / 'journey.html'
     EXTRA_ASSETS['souvenir-art.png'] = SRC / 'brand' / 'souvenir-art.png'
